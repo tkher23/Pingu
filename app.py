@@ -135,3 +135,7 @@ def process_single_profile():
     except Exception as e:
         print("❌ ERROR:", e)
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
