@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title> Pingu </title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 400px;
+      padding: 15px;
+    }
+    textarea, input {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button {
+      margin: 5px 5px 10px 0;
+      padding: 5px 10px;
+    }
+    #output {
+      white-space: pre-wrap;
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .tab-buttons { margin-bottom: 10px; }
+    .tab-buttons button { padding: 5px 10px; margin-right: 5px; }
+    #login-section { text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="login-section">
+    <h3>Please log in with Google</h3>
+    <button id="login-btn">Login with Google</button>
+  </div>
+
+  <div id="main-ui" style="display: none;">
+    <h3>Email Crafter</h3>
+    <div class="tab-buttons">
+      <button id="tab-craft-btn">Craft Email</button>
+      <button id="tab-settings-btn">Settings</button>
+    </div>
+
+    <!-- Craft Email -->
+    <div class="tab active" id="tab-craft">
+      <label for="recipient-name">Recipient's Name:</label>
+      <input id="recipient-name" type="text" placeholder="e.g., Sarah Miller" />
+      <label for="linkedin">LinkedIn Text:</label>
+      <textarea id="linkedin" rows="4" placeholder="Paste LinkedIn About section..."></textarea>
+      <label for="bio">Bio Page Text:</label>
+      <textarea id="bio" rows="4" placeholder="Paste bio page text..."></textarea>
+      <label for="values">Company Values Text:</label>
+      <textarea id="values" rows="4" placeholder="Paste company values text..."></textarea>
+      <label for="interest">Internship Interest:</label>
+      <input id="interest" type="text" placeholder="e.g., financial tech, sustainability, product" />
+      <button id="paste">Paste Clipboard</button>
+      <button id="craft">Craft Email</button>
+      <h4>Email Output:</h4>
+      <div id="output">[Waiting for input]</div>
+    </div>
+
+    <!-- Settings -->
+    <div class="tab" id="tab-settings">
+      <label for="user-name">Your Name:</label>
+      <input id="user-name" type="text" placeholder="e.g., Tanish Kher" />
+      <label for="user-intro">Brief Intro:</label>
+      <textarea id="user-intro" rows="3" placeholder="e.g., second-year student..."></textarea>
+      <label for="default-interest">Default Internship Interest:</label>
+      <input id="default-interest" type="text" placeholder="e.g., private equity" />
+      <label for="persona-context">Personal Context:</label>
+      <textarea id="persona-context" rows="3"></textarea>
+      <label for="company-interest">Company of Interest:</label>
+      <input id="company-interest" type="text" />
+      <label for="role-type">Role Type:</label>
+      <select id="role-type">
+        <option value="internship">Internship</option>
+        <option value="full-time">Full-Time</option>
+      </select>
+      <button id="save-profile">Save Profile</button>
+      <div id="save-msg" style="font-size: 0.9em; color: green;"></div>
+    </div>
+  </div>
+
+  <script src="dist/popup.bundle.js"></script>
+</body>
+</html>
