@@ -2,20 +2,27 @@
   "manifest_version": 3,
   "name": "Pingu",
   "version": "1.0",
-  "description": "Generate personalized internship outreach emails in a persistent sidebar.",
+  "description": "Generate personalized internship outreach emails",
   "permissions": [
-    "sidePanel",
-    "scripting",
-    "clipboardRead",
+    "identity",
     "storage"
   ],
   "host_permissions": [
-    "http://localhost:5000/*"
+    "https://ishnglghmfijbgtuhxzd.supabase.co/*"
   ],
-  "side_panel": {
-    "default_path": "popup.html"
+  "action": {
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["oauth-callback.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "side_panel": {
+    "default_path": "popup.html"
   }
 }

@@ -1,8 +1,18 @@
+import { createClient } from "@supabase/supabase-js";
 
-/************ Ensure Supabase is Ready ************/
-// Since we're loading supabase.js before popup.js, supabase is globally available
+/************ CONFIG ************/
+const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
+const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
 
-/************ DOM References ************/
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let userToken = null;
+
+/************ DOM REFERENCES ************/
+const loginSection = document.getElementById("login-section");
+const mainUI = document.getElementById("main-ui");
+const loginBtn = document.getElementById("login-btn");
+
 const tabCraftBtn = document.getElementById("tab-craft-btn");
 const tabSettingsBtn = document.getElementById("tab-settings-btn");
 const tabCraft = document.getElementById("tab-craft");
@@ -24,57 +34,43 @@ const contextInput = document.getElementById("persona-context");
 const companyInput = document.getElementById("company-interest");
 const roleTypeSelect = document.getElementById("role-type");
 
-const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
-let userToken = null;
-
-import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-/************ Login Enforcement ************/
-async function enforceLogin() {
+/************ LOGIN FLOW ************/
+async function checkLogin() {
   const { data, error } = await supabase.auth.getSession();
+  if (data.session) {
+    userToken = data.session.access_token;
+    await chrome.storage.local.set({ supabaseToken: userToken });
+    return true;
+  }
+  return false;
+}
 
-  if (error || !data.session) {
-    const { data: authData, error: loginError } = await supabase.auth.signInWithOAuth({
-      provider: 'google'
-    });
-    return false;
+async function enforceLogin() {
+  const redirectUrl = chrome.identity.getRedirectURL("oauth-callback.html");
+  const authUrl = `https://ishnglghmfijbgtuhxzd.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+
+  chrome.identity.launchWebAuthFlow({
+    url: authUrl,
+    interactive: true
+  }, (responseUrl) => {
+    console.log("Returned from OAuth:", responseUrl);
+    location.reload();  // reload popup after OAuth
+  });
+}
+
+loginBtn.addEventListener("click", enforceLogin);
+
+/************ INIT AFTER LOGIN ************/
+(async () => {
+  const loggedIn = await checkLogin();
+  if (!loggedIn) {
+    loginSection.style.display = "block";
+    mainUI.style.display = "none";
+    return;
   }
 
-  userToken = data.session.access_token;
-  chrome.storage.local.set({ supabaseToken: userToken });
-  return true;
-}
-
-/************ Tab Logic ************/
-function switchTab(target) {
-  tabCraft.classList.toggle("active", target === "craft");
-  tabSettings.classList.toggle("active", target !== "craft");
-}
-tabCraftBtn.addEventListener("click", () => switchTab("craft"));
-tabSettingsBtn.addEventListener("click", () => switchTab("settings"));
-
-/************ Storage Helpers ************/
-function getProfile() {
-  return new Promise((res) =>
-    chrome.storage.sync.get("userProfile", (data) => res(data.userProfile || {}))
-  );
-}
-function saveProfile(profile) {
-  return new Promise((res) =>
-    chrome.storage.sync.set({ userProfile: profile }, () => res())
-  );
-}
-
-/************ Load Profile After Login ************/
-(async () => {
-  const loggedIn = await enforceLogin();
-  if (!loggedIn) return;
+  loginSection.style.display = "none";
+  mainUI.style.display = "block";
 
   const user = await getProfile();
   if (user.name) nameInput.value = user.name;
@@ -86,7 +82,27 @@ function saveProfile(profile) {
   if (user.role_type) roleTypeSelect.value = user.role_type;
 })();
 
-/************ Save Profile Button ************/
+/************ TAB SWITCHING ************/
+function switchTab(target) {
+  tabCraft.classList.toggle("active", target === "craft");
+  tabSettings.classList.toggle("active", target !== "craft");
+}
+tabCraftBtn.addEventListener("click", () => switchTab("craft"));
+tabSettingsBtn.addEventListener("click", () => switchTab("settings"));
+
+/************ STORAGE HANDLERS ************/
+function getProfile() {
+  return new Promise((res) =>
+    chrome.storage.sync.get("userProfile", (data) => res(data.userProfile || {}))
+  );
+}
+function saveProfile(profile) {
+  return new Promise((res) =>
+    chrome.storage.sync.set({ userProfile: profile }, () => res())
+  );
+}
+
+/************ SAVE PROFILE BUTTON ************/
 saveBtn.addEventListener("click", async () => {
   const profile = {
     name: nameInput.value.trim(),
@@ -101,7 +117,7 @@ saveBtn.addEventListener("click", async () => {
   setTimeout(() => (saveMsg.textContent = ""), 2000);
 });
 
-/************ Clipboard Paste Logic ************/
+/************ CLIPBOARD LOGIC ************/
 let activeField = null;
 [linkedinField, bioField, valuesField, interestField].forEach((field) =>
   field.addEventListener("focus", () => (activeField = field))
@@ -117,7 +133,7 @@ document.getElementById("paste").addEventListener("click", async () => {
   }
 });
 
-/************ Craft Email Logic ************/
+/************ CRAFT EMAIL LOGIC ************/
 document.getElementById("craft").addEventListener("click", async () => {
   if (!userToken) {
     alert("You must be logged in to craft emails.");
