@@ -1,18 +1,14 @@
 <!DOCTYPE html>
-<html>
-  <head><title>OAuth Callback</title></head>
-  <body>
-    <script type="module">
-      import { createClient } from './dist/popup.bundle.js';
-
-      const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-      supabase.auth.getSession().then(({ data, error }) => {
-        console.log("Logged in session:", data);
-        window.close();
-      });
-    </script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OAuth Callback - Supabase Extension</title>
+</head>
+<body>
+  <p>You can close this page and return to the extension.</p>
+  <script>
+    // This page is used as a redirect target for OAuth. Close it if opened.
+    window.close();
+  </script>
+</body>
 </html>
