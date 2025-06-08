@@ -1,19 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "My Supabase Extension",
-  "description": "An extension with Supabase OAuth login",
-  "version": "1.0.0",
-  "permissions": [
-    "identity",
-    "storage"
-  ],
-  "host_permissions": [
-    "https://*.supabase.co/*"
-  ],
+  "name": "Supabase OAuth Extension",
+  "version": "1.0",
+  "permissions": ["storage"],
+  "host_permissions": ["*://*/*"],
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "dist/background.bundle.js"
+    "service_worker": "background.js"
   }
 }

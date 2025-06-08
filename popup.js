@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
 const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
+const LOGIN_URL = "https://your-website.com/login.html";  // <-- Your hosted login page URL
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let userToken = null;
@@ -47,18 +48,11 @@ function saveProfile(profile) {
   );
 }
 
-/************ LOGIN FLOW (BeastX method) ************/
+/************ LOGIN FLOW USING POSTMESSAGE ************/
 async function checkLogin() {
-  const { supabaseRefreshToken } = await chrome.storage.local.get("supabaseRefreshToken");
-  if (supabaseRefreshToken) {
-    const { user, session, error } = await supabase.auth.signIn({ refreshToken: supabaseRefreshToken });
-    if (error || !user) {
-      console.error("Session restore failed:", error);
-      await chrome.storage.local.remove("supabaseRefreshToken");
-      return false;
-    }
-    userToken = session.access_token;
-    await chrome.storage.local.set({ supabaseRefreshToken: session.refresh_token });
+  const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
+  if (supabaseToken) {
+    userToken = supabaseToken;
     return true;
   }
   return false;
@@ -66,34 +60,23 @@ async function checkLogin() {
 
 async function enforceLogin() {
   loginBtn.disabled = true;
-  try {
-    const response = await chrome.runtime.sendMessage({ type: "login" });
 
-    if (response?.success) {
-      const { refreshToken, accessToken } = response;
+  // open hosted login page
+  const loginWindow = window.open(LOGIN_URL, "Login", "width=500,height=600");
 
-      // Set Supabase session directly
-      const { data, error } = await supabase.auth.setSession({
-        refresh_token: refreshToken,
-        access_token: accessToken
-      });
+  // listen for postMessage from hosted login page
+  window.addEventListener("message", async (event) => {
+    if (event.origin !== "https://your-website.com") return;  // Replace with your website domain
 
-      if (error) {
-        console.error("Supabase setSession error:", error);
-        alert("Could not create Supabase session.");
-      } else {
-        userToken = data.session.access_token;
-        await chrome.storage.local.set({ supabaseRefreshToken: data.session.refresh_token });
-        await loadAfterLogin();
-      }
-    } else {
-      console.error("OAuth failed", response?.error);
-      alert("Login failed.");
+    const { token } = event.data;
+    if (token) {
+      userToken = token;
+      await chrome.storage.local.set({ supabaseToken: token });
+      loginWindow.close();
+      await loadAfterLogin();
     }
-  } catch (err) {
-    console.error("OAuth error:", err);
-    alert("OAuth login failed.");
-  }
+  }, { once: true });
+
   loginBtn.disabled = false;
 }
 
@@ -126,8 +109,7 @@ async function loadAfterLogin() {
 
 /************ LOGOUT ************/
 logoutBtn.addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  await chrome.storage.local.remove("supabaseRefreshToken");
+  await chrome.storage.local.remove("supabaseToken");
   userToken = null;
   mainUI.style.display = "none";
   loginSection.style.display = "block";
