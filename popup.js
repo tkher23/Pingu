@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
 const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
-const LOGIN_URL = "https://pingu-login.vercel.app";  // <-- Your hosted login page URL
+const LOGIN_URL = "https://pingu-login.vercel.app/login.html";  // <-- Your hosted login page URL
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let userToken = null;
@@ -66,7 +66,7 @@ async function enforceLogin() {
 
   // listen for postMessage from hosted login page
   window.addEventListener("message", async (event) => {
-    if (event.origin !== "https://pingu-login.vercel.app") return;  // Replace with your website domain
+    if (event.origin !== "https://pingu-login.vercel.app/login.html") return;  // Replace with your website domain
 
     const { token } = event.data;
     if (token) {
