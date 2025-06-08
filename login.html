@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+  <h1>Login</h1>
+  <button onclick="signIn()">Sign In with Google</button>
+
+  <script>
+    const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function signIn() {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      });
+    }
+
+    // After redirect, check if session exists
+    window.onload = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session) {
+        // Send token to backend or extension
+        const accessToken = session.access_token;
+
+        // OPTION 1: Pass token to extension (for demo purposes)
+        const extensionId = "YOUR_EXTENSION_ID";
+        window.location.href = `chrome-extension://${extensionId}/popup.html?token=${accessToken}`;
+      }
+    }
+  </script>
+</body>
+</html>
