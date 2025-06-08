@@ -20,5 +20,9 @@ async function checkSessionAndSend() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (session) {
     window.opener?.postMessage({ token: session.access_token }, "*");
+    
+    setTimeout(() => {
+    window.close();
+    }, 500);  // Give Chrome half a second
   }
 }
