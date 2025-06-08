@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginBtn").addEventListener("click", async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href }
+      options: { redirectTo: 'https://pingu-login.vercel.app/login.html' }
     });
     if (error) console.error("OAuth error:", error);
   });
