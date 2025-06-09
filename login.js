@@ -19,10 +19,9 @@ async function checkSessionAndSend() {
     const accessToken = session.access_token;
 
     // ✅ Send token into extension
-    chrome.runtime.sendMessage(
-      "kdgeijgnalidmiaeeabkccigfedhnbhi",   // << Replace this!
-      { token: accessToken }
-    );
+    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", { token: accessToken }).then(() => {
+    window.close();
+    });
   }
 }
 
