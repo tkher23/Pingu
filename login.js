@@ -4,26 +4,26 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ✅ Proper access to Supabase object from CDN
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: 'https://pingu-login.vercel.app/login.html' }
-    });
-    if (error) console.error("OAuth error:", error);
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
   });
 
-  checkSessionAndSend();
+  if (error) console.error("OAuth error:", error);
 });
 
 async function checkSessionAndSend() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (session) {
     const accessToken = session.access_token;
-    
+
+    // ✅ Send token into extension
     chrome.runtime.sendMessage(
-        "kdgeijgnalidmiaeeabkccigfedhnbhi",  // ⬅️ We'll fix this below
-        { token: accessToken }
+      "kdgeijgnalidmiaeeabkccigfedhnbhi",   // << Replace this!
+      { token: accessToken }
     );
+  }
 }
-}
+
+window.addEventListener("DOMContentLoaded", checkSessionAndSend);
