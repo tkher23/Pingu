@@ -55,6 +55,18 @@ async function enforceLogin() {
 
 loginBtn.addEventListener("click", enforceLogin);
 
+/************ LOGIC TO LOAD UI BASED ON LOGIN ************/
+async function loadUI() {
+  const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
+  if (supabaseToken) {
+    userToken = supabaseToken;
+    await loadAfterLogin();
+  } else {
+    loginSection.style.display = "block";
+    mainUI.style.display = "none";
+  }
+}
+
 /************ LISTEN FOR LOGIN COMPLETE MESSAGE ************/
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "loginComplete") {
