@@ -5,7 +5,8 @@
   "description": "Generate personalized outreach emails!",
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://pingu-login.vercel.app/*"
@@ -14,10 +15,13 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_title": "Pingu"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "externally_connectable": {
-  "matches": ["https://pingu-login.vercel.app/*"]
+    "matches": ["https://pingu-login.vercel.app/*"]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

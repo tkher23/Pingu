@@ -3,7 +3,12 @@ const LOGIN_URL = "https://pingu-login.vercel.app/login.html";
 
 let oauthWindowId = null;
 
-/************ Listen for popup connecting ************/
+/************ Setup Side Panel Behavior ************/
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
+
+/************ Listen for login popup request ************/
 chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((message) => {
     if (message.type === "login") {
@@ -23,7 +28,7 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
   if (request.token) {
     chrome.storage.local.set({ supabaseToken: request.token }, () => {
-      // Notify all popup instances
+      // Notify all side panel instances
       chrome.runtime.sendMessage({ type: "loginComplete" });
 
       if (oauthWindowId !== null) {
