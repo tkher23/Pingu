@@ -1,4 +1,3 @@
-/************ CONFIG ************/
 const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
 
 let userToken = null;
@@ -30,6 +29,8 @@ const contextInput = document.getElementById("persona-context");
 const companyInput = document.getElementById("company-interest");
 const roleTypeSelect = document.getElementById("role-type");
 
+const creditsDisplay = document.getElementById("credits-display");
+
 /************ STORAGE HANDLERS ************/
 function getProfile() {
   return new Promise((res) =>
@@ -54,22 +55,10 @@ async function enforceLogin() {
 
 loginBtn.addEventListener("click", enforceLogin);
 
-/************ LOGIC TO LOAD UI BASED ON LOGIN ************/
-async function loadUI() {
-  const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
-  if (supabaseToken) {
-    userToken = supabaseToken;
-    await loadAfterLogin();
-  } else {
-    loginSection.style.display = "block";
-    mainUI.style.display = "none";
-  }
-}
-
 /************ LISTEN FOR LOGIN COMPLETE MESSAGE ************/
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "loginComplete") {
-    loadUI();  // <-- re-run the UI update immediately on loginComplete message
+    loadUI();  // Re-render UI when login completes
   }
 });
 
@@ -89,6 +78,29 @@ async function loadAfterLogin() {
   if (user.persona_context) contextInput.value = user.persona_context;
   if (user.company_interest) companyInput.value = user.company_interest;
   if (user.role_type) roleTypeSelect.value = user.role_type;
+
+  await fetchCredits(); // 👈 Fetch credits on UI load
+}
+
+/************ FETCH USER CREDITS ************/
+async function fetchCredits() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/get-credits`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${userToken}`
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      creditsDisplay.textContent = `Credits: ${data.credits}`;
+    } else {
+      creditsDisplay.textContent = `Credits: error loading`;
+    }
+  } catch (err) {
+    creditsDisplay.textContent = `Credits: failed to load`;
+    console.error("Error fetching credits:", err);
+  }
 }
 
 /************ LOGOUT ************/
@@ -187,6 +199,8 @@ document.getElementById("craft").addEventListener("click", async () => {
 
     const data = await response.json();
     outputDiv.textContent = data.generated_email;
+
+    await fetchCredits(); // 👈 Refresh credits after crafting
   } catch (err) {
     console.error("Fetch Error:", err);
     outputDiv.textContent = `Error: ${err.message || "Failed to connect."}`;
