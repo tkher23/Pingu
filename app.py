@@ -18,7 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 def get_user_credits(user_id):
-    url = f"{SUPABASE_URL}/rest/v1/user_profiles?user_id=eq.{user_id}&select=credits"
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=credits"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
