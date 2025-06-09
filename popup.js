@@ -36,6 +36,7 @@ function getProfile() {
     chrome.storage.sync.get("userProfile", (data) => res(data.userProfile || {}))
   );
 }
+
 function saveProfile(profile) {
   return new Promise((res) =>
     chrome.storage.sync.set({ userProfile: profile }, () => res())
@@ -43,47 +44,39 @@ function saveProfile(profile) {
 }
 
 /************ LOGIN FLOW ************/
-async function checkLogin() {
-  const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
-  if (supabaseToken) {
-    userToken = supabaseToken;
-    return true;
-  }
-  return false;
-}
-
 async function enforceLogin() {
   loginBtn.disabled = true;
-
-  // Ask background to launch login flow
-  await chrome.runtime.sendMessage({ type: "login" });
-
-  // Poll storage until token arrives
-  const poll = setInterval(async () => {
-    const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
-    if (supabaseToken) {
-      clearInterval(poll);
-      userToken = supabaseToken;
-      await loadAfterLogin();
-    }
-  }, 500);
-
+  await chrome.storage.local.remove("supabaseToken");
+  const port = chrome.runtime.connect();
+  port.postMessage({ type: "login" });
   loginBtn.disabled = false;
 }
 
 loginBtn.addEventListener("click", enforceLogin);
 
-/************ INIT AFTER LOGIN ************/
-(async () => {
-  const loggedIn = await checkLogin();
-  if (!loggedIn) {
+/************ LOGIC TO LOAD UI BASED ON LOGIN ************/
+async function loadUI() {
+  const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
+  if (supabaseToken) {
+    userToken = supabaseToken;
+    await loadAfterLogin();
+  } else {
     loginSection.style.display = "block";
     mainUI.style.display = "none";
-    return;
   }
-  await loadAfterLogin();
-})();
+}
 
+/************ LISTEN FOR LOGIN COMPLETE MESSAGE ************/
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === "loginComplete") {
+    loadUI();  // <-- re-run the UI update immediately on loginComplete message
+  }
+});
+
+/************ INITIAL UI LOAD WHEN POPUP OPENS ************/
+loadUI();
+
+/************ AFTER LOGIN CONTENT LOADER ************/
 async function loadAfterLogin() {
   loginSection.style.display = "none";
   mainUI.style.display = "block";
@@ -111,6 +104,7 @@ function switchTab(target) {
   tabCraft.classList.toggle("active", target === "craft");
   tabSettings.classList.toggle("active", target !== "craft");
 }
+
 tabCraftBtn.addEventListener("click", () => switchTab("craft"));
 tabSettingsBtn.addEventListener("click", () => switchTab("settings"));
 

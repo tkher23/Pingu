@@ -1,25 +1,35 @@
 /************ CONFIG ************/
 const LOGIN_URL = "https://pingu-login.vercel.app/login.html";
 
-// Listen for popup requesting login
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "login") {
-    handleLoginFlow();
-  }
-  return true;
-});
+let oauthWindowId = null;
 
-async function handleLoginFlow() {
-  const loginWindow = window.open(LOGIN_URL, "Login", "width=500,height=600");
-
-  // Listen for postMessage from login.html
-  window.addEventListener("message", async (event) => {
-    if (event.origin !== "https://pingu-login.vercel.app") return;
-
-    const { token } = event.data;
-    if (token) {
-      await chrome.storage.local.set({ supabaseToken: token });
-      loginWindow.close();
+/************ Listen for popup connecting ************/
+chrome.runtime.onConnect.addListener((port) => {
+  port.onMessage.addListener((message) => {
+    if (message.type === "login") {
+      chrome.windows.create({
+        url: LOGIN_URL,
+        type: "popup",
+        width: 500,
+        height: 600
+      }, (newWindow) => {
+          oauthWindowId = newWindow.id; // Track OAuth window ID
+      });
     }
   });
-}
+});
+
+/************ Listen for token received externally from hosted login page ************/
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+  if (request.token) {
+    chrome.storage.local.set({ supabaseToken: request.token }, () => {
+      // Notify all popup instances
+      chrome.runtime.sendMessage({ type: "loginComplete" });
+
+      if (oauthWindowId !== null) {
+        chrome.windows.remove(oauthWindowId);
+        oauthWindowId = null;
+      }
+    });
+  }
+});

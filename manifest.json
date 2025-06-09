@@ -16,6 +16,9 @@
   "action": {
     "default_popup": "popup.html"
   },
+  "externally_connectable": {
+  "matches": ["https://pingu-login.vercel.app/*"]
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }
