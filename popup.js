@@ -119,7 +119,7 @@ saveBtn.addEventListener("click", async () => {
     role_type: roleTypeSelect.value
   };
   await saveProfile(profile);
-  saveMsg.textContent = "✅ Saved!";
+  saveMsg.textContent = "Saved!";
   setTimeout(() => (saveMsg.textContent = ""), 2000);
 });
 
