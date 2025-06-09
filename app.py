@@ -136,6 +136,16 @@ def process_single_profile():
         print("❌ ERROR:", e)
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+@app.route('/api/get-credits', methods=['GET'])
+def get_credits():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    user_id = get_user_id_from_token(token)
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    credits = get_user_credits(user_id)
+    return jsonify({"credits": credits}), 200
+
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
