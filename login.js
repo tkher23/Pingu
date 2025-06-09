@@ -19,10 +19,11 @@ document.addEventListener("DOMContentLoaded", () => {
 async function checkSessionAndSend() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (session) {
-    window.opener?.postMessage({ token: session.access_token }, "*");
+    const accessToken = session.access_token;
     
-    setTimeout(() => {
-    window.close();
-    }, 500);  // Give Chrome half a second
-  }
+    chrome.runtime.sendMessage(
+        "kdgeijgnalidmiaeeabkccigfedhnbhi",  // ⬅️ We'll fix this below
+        { token: accessToken }
+    );
+}
 }
