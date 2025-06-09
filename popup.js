@@ -1,6 +1,5 @@
 /************ CONFIG ************/
 const BACKEND_URL = "https://chrome-pingu-backend.onrender.com";
-const LOGIN_URL = "https://pingu-login.vercel.app/login.html"; 
 
 let userToken = null;
 
@@ -43,7 +42,7 @@ function saveProfile(profile) {
   );
 }
 
-/************ LOGIN FLOW USING POSTMESSAGE ************/
+/************ LOGIN FLOW ************/
 async function checkLogin() {
   const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
   if (supabaseToken) {
@@ -56,19 +55,18 @@ async function checkLogin() {
 async function enforceLogin() {
   loginBtn.disabled = true;
 
-  const loginWindow = window.open(LOGIN_URL, "Login", "width=500,height=600");
+  // Ask background to launch login flow
+  await chrome.runtime.sendMessage({ type: "login" });
 
-  window.addEventListener("message", async (event) => {
-    if (event.origin !== "https://pingu-login.vercel.app") return;
-
-    const { token } = event.data;
-    if (token) {
-      userToken = token;
-      await chrome.storage.local.set({ supabaseToken: token });
-      loginWindow.close();
+  // Poll storage until token arrives
+  const poll = setInterval(async () => {
+    const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
+    if (supabaseToken) {
+      clearInterval(poll);
+      userToken = supabaseToken;
       await loadAfterLogin();
     }
-  }, { once: true });
+  }, 500);
 
   loginBtn.disabled = false;
 }

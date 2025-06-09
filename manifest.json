@@ -1,15 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Pingu Email Crafter",
+  "name": "Pingu",
   "version": "1.0",
-  "description": "Generate personalized outreach emails via Supabase OAuth.",
+  "description": "Generate personalized outreach emails!",
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "https://pingu-login.vercel.app/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
