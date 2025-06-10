@@ -22,7 +22,7 @@ const outputDiv = document.getElementById("output");
 
 const nameInput = document.getElementById("user-name");
 const introInput = document.getElementById("user-intro");
-const defaultIntInp = document.getElementById("default-interest");
+const defaultInterestInput = document.getElementById("default-interest");
 const saveBtn = document.getElementById("save-profile");
 const saveMsg = document.getElementById("save-msg");
 const contextInput = document.getElementById("persona-context");
@@ -32,16 +32,33 @@ const roleTypeSelect = document.getElementById("role-type");
 const creditsDisplay = document.getElementById("credits-display");
 
 /************ STORAGE HANDLERS ************/
-function getProfile() {
-  return new Promise((res) =>
-    chrome.storage.sync.get("userProfile", (data) => res(data.userProfile || {}))
-  );
+async function getProfile() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/user-settings`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+    if (!res.ok) return {};
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch user settings:", err);
+    return {};
+  }
 }
 
-function saveProfile(profile) {
-  return new Promise((res) =>
-    chrome.storage.sync.set({ userProfile: profile }, () => res())
-  );
+async function saveProfile(profile) {
+  try {
+    await fetch(`${BACKEND_URL}/api/user-settings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${userToken}`
+      },
+      body: JSON.stringify(profile)
+    });
+  } catch (err) {
+    console.error("Failed to save user settings:", err);
+  }
 }
 
 /************ LOGIN FLOW ************/
@@ -70,7 +87,7 @@ async function loadUI() {
 /************ LISTEN FOR LOGIN COMPLETE MESSAGE ************/
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "loginComplete") {
-    loadUI();  // Re-render UI when login completes
+    loadUI();
   }
 });
 
@@ -85,13 +102,13 @@ async function loadAfterLogin() {
   const user = await getProfile();
   if (user.name) nameInput.value = user.name;
   if (user.intro) introInput.value = user.intro;
-  if (user.defaultInt) defaultIntInp.value = user.defaultInt;
-  if (user.defaultInt && !interestField.value) interestField.value = user.defaultInt;
+  if (user.default_interest) defaultInterestInput.value = user.default_interest;
+  if (user.default_interest && !interestField.value) interestField.value = user.default_interest;
   if (user.persona_context) contextInput.value = user.persona_context;
   if (user.company_interest) companyInput.value = user.company_interest;
   if (user.role_type) roleTypeSelect.value = user.role_type;
 
-  await fetchCredits(); // 👈 Fetch credits on UI load
+  await fetchCredits();
 }
 
 /************ FETCH USER CREDITS ************/
@@ -137,7 +154,7 @@ saveBtn.addEventListener("click", async () => {
   const profile = {
     name: nameInput.value.trim(),
     intro: introInput.value.trim(),
-    defaultInt: defaultIntInp.value.trim(),
+    default_interest: defaultInterestInput.value.trim(),
     persona_context: contextInput.value.trim(),
     company_interest: companyInput.value.trim(),
     role_type: roleTypeSelect.value
@@ -173,7 +190,7 @@ document.getElementById("craft").addEventListener("click", async () => {
   outputDiv.textContent = "Crafting email…";
 
   const user = await getProfile();
-  const internshipInterest = interestField.value.trim() || user.defaultInt || "";
+  const internshipInterest = interestField.value.trim() || user.default_interest || "";
 
   const payload = {
     user_info: {
@@ -212,7 +229,7 @@ document.getElementById("craft").addEventListener("click", async () => {
     const data = await response.json();
     outputDiv.textContent = data.generated_email;
 
-    await fetchCredits(); // 👈 Refresh credits after crafting
+    await fetchCredits(); // Refresh credits after crafting
   } catch (err) {
     console.error("Fetch Error:", err);
     outputDiv.textContent = `Error: ${err.message || "Failed to connect."}`;
