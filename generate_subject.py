@@ -13,14 +13,15 @@ llm = ChatOpenAI(
 )
 
 subject_prompt_template = PromptTemplate(
-    input_variables=["user_intro", "company_of_interest"],
+    input_variables=["user_intro", "company_of_interest", "internship_interest"],
     template="""
-You are {user_intro}, and you're reaching out to the company {company_of_interest} about {interest}.
+You are {user_intro}, and you're reaching out to someone at {company_of_interest} because you're excited about opportunities in {internship_interest}, which may be different from your academic background.
 
-The cold email is an email expressing interest in the person at the company and asking to coffee chat for a potential job at that company.
-Write a short, fun, and professional subject line (no more than 10 words) for a cold email expressing your interest in a potential job. 
-- Be inviting — not generic, formal, or clickbait
-Output ONLY the subject line.
+Write a short, fun, and professional subject line (no more than 5 words) for a cold email asking to connect and chat about breaking into {internship_interest}. 
+- Avoid generic, overly formal, or clickbait-y tones.
+- Make it sound approachable and tailored, not templated.
+
+Output ONLY the subject line with no quotes around it.
 """
 )
 
