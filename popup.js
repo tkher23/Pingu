@@ -18,7 +18,7 @@ const linkedinField = document.getElementById("linkedin");
 const bioField = document.getElementById("bio");
 const valuesField = document.getElementById("values");
 const interestField = document.getElementById("interest");
-const outputDiv = document.getElementById("output");
+const outputField = document.getElementById("output");
 
 const nameInput = document.getElementById("user-name");
 const introInput = document.getElementById("user-intro");
@@ -30,6 +30,9 @@ const companyInput = document.getElementById("company-interest");
 const roleTypeSelect = document.getElementById("role-type");
 
 const creditsDisplay = document.getElementById("credits-display");
+const copyBtn = document.getElementById("copy-email-btn");
+const copyMsg = document.getElementById("copy-confirmation");
+
 
 /************ STORAGE HANDLERS ************/
 async function getProfile() {
@@ -187,7 +190,7 @@ document.getElementById("craft").addEventListener("click", async () => {
     return;
   }
 
-  outputDiv.textContent = "Crafting email…";
+  outputField.value = "Crafting email…";
 
   const user = await getProfile();
   const internshipInterest = interestField.value.trim() || user.default_interest || "";
@@ -227,11 +230,22 @@ document.getElementById("craft").addEventListener("click", async () => {
     }
 
     const data = await response.json();
-    outputDiv.textContent = data.generated_email;
+    outputField.value = data.generated_email;
 
     await fetchCredits(); // Refresh credits after crafting
   } catch (err) {
     console.error("Fetch Error:", err);
-    outputDiv.textContent = `Error: ${err.message || "Failed to connect."}`;
+    outputField.value = `Error: ${err.message || "Failed to connect."}`;
+  }
+});
+
+copyBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(outputField.value);
+    copyMsg.textContent = "Copied!";
+    setTimeout(() => (copyMsg.textContent = ""), 1500);
+  } catch (err) {
+    console.error("Copy failed:", err);
+    copyMsg.textContent = "Failed to copy.";
   }
 });
