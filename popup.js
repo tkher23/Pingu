@@ -19,6 +19,7 @@ const bioField = document.getElementById("bio");
 const valuesField = document.getElementById("values");
 const interestField = document.getElementById("interest");
 const outputField = document.getElementById("output");
+const subjectOutputField = document.getElementById("subject-output")
 
 const nameInput = document.getElementById("user-name");
 const introInput = document.getElementById("user-intro");
@@ -31,6 +32,7 @@ const roleTypeSelect = document.getElementById("role-type");
 
 const creditsDisplay = document.getElementById("credits-display");
 const copyBtn = document.getElementById("copy-email-btn");
+const copyBtn2 = document.getElementById("copy-subject-btn");
 const copyMsg = document.getElementById("copy-confirmation");
 
 
@@ -167,19 +169,53 @@ saveBtn.addEventListener("click", async () => {
   setTimeout(() => (saveMsg.textContent = ""), 2000);
 });
 
-/************ CLIPBOARD LOGIC ************/
-let activeField = null;
-[linkedinField, bioField, valuesField, interestField].forEach((field) =>
-  field.addEventListener("focus", () => (activeField = field))
-);
-document.getElementById("paste").addEventListener("click", async () => {
+
+
+/************ GENERATE SUBJECT LINE LOGIC ************/
+document.getElementById("generate-subject").addEventListener("click", async () => {
+  if (!userToken) {
+    alert("You must be logged in to generate a subject line.");
+    return;
+  }
+
+  const user = await getProfile();
+
+  const payload = {
+    user_info: {
+      intro: user.intro || ""
+    },
+    company_of_interest: user.company_interest || ""
+  };
+
+  const subjectOutputField = document.getElementById("subject-output");
+  subjectOutputField.value = "Generating subject…";
+
   try {
-    const text = await navigator.clipboard.readText();
-    if (activeField) activeField.value = text;
-    else alert("Click inside a field before pasting.");
+    const response = await fetch(`${BACKEND_URL}/api/generate-subject`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${userToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      let msg = "Server error";
+      try {
+        const err = await response.json();
+        msg = err.error || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await response.json();
+    subjectOutputField.value = data.subject;
+
+    await fetchCredits(); // Refresh credits after subject generation
   } catch (err) {
-    console.error("Clipboard read failed:", err);
-    alert("Unable to access clipboard.");
+    console.error("Fetch Error:", err);
+    subjectOutputField.value = `Error: ${err.message || "Failed to connect."}`;
   }
 });
 
@@ -242,6 +278,17 @@ document.getElementById("craft").addEventListener("click", async () => {
 copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(outputField.value);
+    copyMsg.textContent = "Copied!";
+    setTimeout(() => (copyMsg.textContent = ""), 1500);
+  } catch (err) {
+    console.error("Copy failed:", err);
+    copyMsg.textContent = "Failed to copy.";
+  }
+});
+
+copyBtn2.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(subjectOutputField.value);
     copyMsg.textContent = "Copied!";
     setTimeout(() => (copyMsg.textContent = ""), 1500);
   } catch (err) {
