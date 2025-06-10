@@ -22,12 +22,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    const gmailAccessToken = session.provider_token;
-    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", { token: gmailAccessToken }).then(() => { window.close();});
+    const { access_token, provider_token } = session;
 
-    // Send token into extension
-    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", { token: accessToken }).then(() => {
-      window.close();
+    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", {
+    supabaseToken: access_token,
+    gmailToken: provider_token}).then(() => {
+    window.close();
     });
   }
 });
