@@ -160,8 +160,6 @@ def generate_subject_route():
         processed = process_profiles_batch([profile], generate_email_flag=False, generate_subject_flag=True)
         subject = processed[0].get("generated_subject", "")
 
-        decrement_user_credits(user_id)
-
         return jsonify({"subject": subject}), 200
 
     except Exception as e:
