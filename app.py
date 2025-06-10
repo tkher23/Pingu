@@ -146,6 +146,46 @@ def get_credits():
     credits = get_user_credits(user_id)
     return jsonify({"credits": credits}), 200
 
+@app.route('/api/user-settings', methods=['GET'])
+def get_user_settings():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    user_id = get_user_id_from_token(token)
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    url = f"{SUPABASE_URL}/rest/v1/user_settings?id=eq.{user_id}"
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {token}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.ok:
+        data = response.json()
+        return jsonify(data[0] if data else {}), 200
+    return jsonify({"error": "Failed to fetch user settings"}), 500
+
+@app.route('/api/user-settings', methods=['POST'])
+def update_user_settings():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    user_id = get_user_id_from_token(token)
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    payload = request.get_json()
+    payload["id"] = user_id  # ensure correct ID
+
+    url = f"{SUPABASE_URL}/rest/v1/user_settings"
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+    response = requests.post(url, headers=headers, json=[payload])
+    if response.ok:
+        return jsonify({"success": True}), 200
+    return jsonify({"error": "Failed to save settings"}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
