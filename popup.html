@@ -51,7 +51,8 @@
     </p>
 
     <div class="tab-buttons">
-      <button id="tab-craft-btn">Craft Email</button>
+      <button id="tab-simple-btn">Simple Email</button>
+      <button id="tab-craft-btn">Advanced Email</button>
       <button id="tab-settings-btn">Settings</button>
       <button id="logout-btn" style="float:right;">Logout</button>
     </div>
@@ -73,20 +74,42 @@
       <label for="interest">Internship Interest:</label>
       <input id="interest" type="text" placeholder="e.g., financial tech, sustainability, product" />
 
-      <button id="craft">Craft Email</button>
-
-      <button id="generate-subject">Generate Subject Line</button>
-      
+      <button id="generate-advanced-email">Generate Advanced Email</button>
 
       <h4>Subject Line Output:</h4>
       <textarea id="subject-output" rows="2" style="width: 100%; margin-top: 10px;"></textarea>
+      <button id="generate-subject">Give me another subject</button>
 
       <h4>Email Output:</h4>
       <textarea id="output" rows="10" style="width: 100%; margin-top: 10px;"></textarea>
+      <button id="craft">Give me another email</button>
+
+      <div style="margin-top: 10px;"> </div>      
 
       <button id="copy-email-btn" style="margin-top: 5px;">Copy Email</button>
       <button id="copy-subject-btn" style="margin-top: 5px;">Copy Subject</button>
       <div id="copy-confirmation" style="color: green; font-size: 0.9em;"></div>
+    </div>
+
+    <!-- Simple Email Tab -->
+    <div class="tab" id="tab-simple">
+      <label for="simple-recipient">Recipient's Name:</label>
+      <input id="simple-recipient" type="text" placeholder="e.g., Alex Kim" />
+
+      <label for="simple-interest">Internship Interest:</label>
+      <input id="simple-interest" type="text" placeholder="e.g., sustainability, software" />
+
+      <button id="generate-simple-email">Generate Simple Email</button>
+
+      <h4>Subject Line Output:</h4>
+      <textarea id="simple-subject-output" rows="2" style="width: 100%; margin-top: 10px;"></textarea>
+
+      <h4>Email Output:</h4>
+      <textarea id="simple-email-output" rows="10" style="width: 100%; margin-top: 10px;"></textarea>
+
+      <button id="copy-simple-email-btn" style="margin-top: 5px;">Copy Email</button>
+      <button id="copy-simple-subject-btn" style="margin-top: 5px;">Copy Subject</button>
+      <div id="simple-copy-confirmation" style="color: green; font-size: 0.9em;"></div>
     </div>
 
     <!-- Settings Tab -->
@@ -97,7 +120,7 @@
       <label for="user-intro">Brief Intro:</label>
       <textarea id="user-intro" rows="3" placeholder="e.g., second-year student..."></textarea>
 
-      <label for="default-interest">Default Internship Interest:</label>
+      <label for="default-interest">Default Career/Internship Interest:</label>
       <input id="default-interest" type="text" placeholder="e.g., private equity" />
 
       <label for="persona-context">Personal Context:</label>
