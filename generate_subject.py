@@ -35,7 +35,7 @@ def generate_subject(profile):
     prompt = subject_prompt_template.format(
         user_intro=user_intro,
         company_of_interest=company,
-        interest=internship_interest
+        internship_interest=internship_interest
     )
 
     messages = [HumanMessage(content=prompt)]
