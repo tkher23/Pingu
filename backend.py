@@ -1,10 +1,10 @@
-
 import os
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import json
 from langchain_email_writer import generate_email
+from generate_subject import generate_subject
 
 # Load environment variables
 load_dotenv()
@@ -59,7 +59,7 @@ def extract_all_text(raw_text, max_tokens=300):
 
 # === Full Workflow ===
 
-def process_profiles_batch(profiles):
+def process_profiles_batch(profiles, generate_email_flag=True, generate_subject_flag=True):
     for profile in profiles:
         linkedin_raw_text = profile.get("linkedin", {}).get("raw_text", "")
         bio_raw_text = profile.get("bio_page", {}).get("raw_text", "")
@@ -70,9 +70,14 @@ def process_profiles_batch(profiles):
         profile["values_page"] = extract_all_text(values_raw_text)
 
     for profile in profiles:
-        profile["generated_email"] = generate_email(profile)
+        if generate_email_flag:
+            profile["generated_email"] = generate_email(profile)
+        if generate_subject_flag:
+            profile["generated_subject"] = generate_subject(profile)
 
     return profiles
+
+# === CLI Entry Point (Optional) ===
 
 if __name__ == "__main__":
     import sys
@@ -80,9 +85,20 @@ if __name__ == "__main__":
         input_data = json.loads(sys.argv[1])
         if "profiles" not in input_data:
             raise ValueError("Missing 'profiles' key in the input data.")
-        processed_profiles = process_profiles_batch(input_data["profiles"])
+
+        # Allow optional flags in CLI usage
+        generate_email_flag = input_data.get("generate_email", True)
+        generate_subject_flag = input_data.get("generate_subject", True)
+
+        processed_profiles = process_profiles_batch(
+            input_data["profiles"],
+            generate_email_flag=generate_email_flag,
+            generate_subject_flag=generate_subject_flag
+        )
+
         sys.stdout.write(json.dumps(processed_profiles))
         sys.stdout.flush()
+
     except json.JSONDecodeError as jde:
         sys.stderr.write(f"JSON decode error: {str(jde)}\n")
         sys.stderr.flush()

@@ -125,7 +125,7 @@ def process_single_profile():
             "role_type": data.get("user_info", {}).get("role_type", "internship")
         }
 
-        processed = process_profiles_batch([profile])
+        processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False)
 
         # ✅ Subtract credit after successful processing
         decrement_user_credits(user_id)
@@ -135,6 +135,38 @@ def process_single_profile():
     except Exception as e:
         print("❌ ERROR:", e)
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route('/api/generate-subject', methods=['POST'])
+def generate_subject_route():
+    try:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        user_credits = get_user_credits(user_id)
+        if user_credits <= 0:
+            return jsonify({"error": "You’ve used all your credits. Please contact support to request more."}), 403
+
+        data = request.get_json()
+        user_info = data.get("user_info", {})
+        company = data.get("company_of_interest", "")
+
+        profile = {
+            "user_info": user_info,
+            "company_of_interest": company
+        }
+
+        processed = process_profiles_batch([profile], generate_email_flag=False, generate_subject_flag=True)
+        subject = processed[0].get("generated_subject", "")
+
+        decrement_user_credits(user_id)
+
+        return jsonify({"subject": subject}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/get-credits', methods=['GET'])
 def get_credits():
