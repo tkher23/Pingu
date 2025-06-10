@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import json
 from langchain_email_writer import generate_email
 from generate_subject import generate_subject
+from simple_email import generate_simple_email
 
 # Load environment variables
 load_dotenv()
@@ -59,7 +60,7 @@ def extract_all_text(raw_text, max_tokens=300):
 
 # === Full Workflow ===
 
-def process_profiles_batch(profiles, generate_email_flag=True, generate_subject_flag=True):
+def process_profiles_batch(profiles, generate_email_flag=True, generate_subject_flag=True, simple_email=False):
     for profile in profiles:
         linkedin_raw_text = profile.get("linkedin", {}).get("raw_text", "")
         bio_raw_text = profile.get("bio_page", {}).get("raw_text", "")
@@ -71,7 +72,10 @@ def process_profiles_batch(profiles, generate_email_flag=True, generate_subject_
 
     for profile in profiles:
         if generate_email_flag:
-            profile["generated_email"] = generate_email(profile)
+            if simple_email:
+                profile["generated_email"] = generate_simple_email(profile)
+            else:
+                profile["generated_email"] = generate_email(profile)
         if generate_subject_flag:
             profile["generated_subject"] = generate_subject(profile)
 

@@ -165,6 +165,36 @@ def generate_subject_route():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/simple-email', methods=['POST'])
+def generate_simple_email_api():
+    try:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        user_credits = get_user_credits(user_id)
+        if user_credits <= 0:
+            return jsonify({"error": "You’ve used all your credits. Please contact support to request more."}), 403
+
+        data = request.get_json()
+        print("📩 Simple Email Request:", json.dumps(data, indent=2))
+
+        profile = {
+            "internship_interest": data.get("internship_interest", ""),
+            "user_info": data.get("user_info", {}),
+            "recipient_name": data.get("recipient_name", ""),
+            "company_of_interest": data.get("user_info", {}).get("company_interest", ""),
+        }
+
+        processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
+
+        decrement_user_credits(user_id)
+        return jsonify(processed[0]), 200
+
+    except Exception as e:
+        print("❌ Simple Email ERROR:", e)
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/api/get-credits', methods=['GET'])
 def get_credits():
