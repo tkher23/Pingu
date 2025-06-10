@@ -5,9 +5,12 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.href }
-  });
+  provider: 'google',
+  options: {
+    redirectTo: window.location.href,
+    scopes: 'https://www.googleapis.com/auth/gmail.send'
+  }
+});
 
   if (error) console.error("OAuth error:", error);
 });
@@ -19,7 +22,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    const accessToken = session.access_token;
+    const gmailAccessToken = session.provider_token;
+    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", { token: gmailAccessToken }).then(() => { window.close();});
 
     // Send token into extension
     chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", { token: accessToken }).then(() => {
