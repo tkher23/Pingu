@@ -1,3 +1,6 @@
+console.log("🧭 Current URL:", window.location.href);
+console.log("🧭 Extension ID from sessionStorage:", sessionStorage.getItem("extensionId"));
+
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI"
 
@@ -30,6 +33,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
+  console.log("📦 Query params:", [...urlParams.entries()]);
   if (!urlParams.get("code")) return;
   if (!EXTENSION_ID) return console.error("Missing extension ID");
 
