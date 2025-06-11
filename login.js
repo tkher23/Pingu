@@ -24,7 +24,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (session) {
     const { access_token, provider_token } = session;
 
-    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", {
+    chrome.runtime.sendMessage(chrome.runtime.id, {
     supabaseToken: access_token,
     gmailToken: provider_token}).then(() => {
     window.close();
