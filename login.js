@@ -4,6 +4,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
+  console.log(window.location.href)
   const { data, error } = await supabase.auth.signInWithOAuth({
   provider: 'google',
   options: {
@@ -24,7 +25,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (session) {
     const { access_token, provider_token } = session;
 
-    chrome.runtime.sendMessage(chrome.runtime.id, {
+    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", {
     supabaseToken: access_token,
     gmailToken: provider_token}).then(() => {
     window.close();
