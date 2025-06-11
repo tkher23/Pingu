@@ -22,33 +22,22 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
 window.addEventListener("DOMContentLoaded", async () => {
   if (!window.location.search.includes("code=")) return;
+  if (!EXTENSION_ID) return console.error("Missing extension ID");
 
-  if (!EXTENSION_ID) {
-    console.error("❌ Missing extension ID in URL.");
-    return;
-  }
-
-  const { data, error } = await supabase.auth.exchangeCodeForSession();
-  if (error) {
-    console.error("❌ Exchange error:", error);
-    return;
-  }
+  const { data: sessionExchange, error: exchangeError } = await supabase.auth.exchangeCodeForSession();
+  if (exchangeError) return console.error("Exchange error:", exchangeError);
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    console.error("❌ No session found after exchange.");
-    return;
+  if (!session) return console.error("No session");
+
+  try {
+    await chrome.storage.local.set({
+      supabaseToken: session.access_token,
+      gmailToken: session.provider_token
+    });
+    console.log("✅ Token stored in chrome.storage.local");
+    window.close();
+  } catch (e) {
+    console.error("❌ Could not store in chrome.storage.local:", e);
   }
-
-  // ✅ Create a long-lived connection and send token through it
-  const port = chrome.runtime.connect({ name: "pingu-auth" });
-
-  port.postMessage({
-    type: "authSuccess",
-    supabaseToken: session.access_token,
-    gmailToken: session.provider_token
-  });
-
-  console.log("✅ Token sent via port. Closing window...");
-  window.close();
 });
