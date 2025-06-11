@@ -4,33 +4,65 @@
   <title>Pingu Email Crafter</title>
   <meta http-equiv="Content-Security-Policy" content="script-src 'self'; object-src 'self'">
   <script src="popup.js" defer></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      width: 400px;
-      padding: 15px;
-    }
-    textarea, input {
-      width: 100%;
-      margin-bottom: 10px;
-    }
-    button {
-      margin: 5px 5px 10px 0;
-      padding: 5px 10px;
-    }
-    #output {
-      white-space: pre-wrap;
-      background-color: #f4f4f4;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-    .tab { display: none; }
-    .tab.active { display: block; }
-    .tab-buttons { margin-bottom: 10px; }
-    .tab-buttons button { padding: 5px 10px; margin-right: 5px; }
-    #login-section { text-align: center; }
-  </style>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    width: 360px; /* smaller to avoid edge overflow */
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    font-size: 13px;
+    overflow-x: hidden;
+  }
+
+  textarea, input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  button {
+    margin: 4px 4px 8px 0;
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .tab-buttons {
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tab-buttons button {
+    flex: none;                /* Don't force equal width */
+    min-width: auto;           /* Let width fit content */
+    max-width: 100%;           /* Prevent overflow */
+    white-space: nowrap;       /* Keep button text on one line */
+    overflow: hidden;          /* Hide any accidental overflow */
+    text-overflow: ellipsis;   /* Show ... if still too long */
+  }
+
+  #logout-btn {
+    flex: none;
+    margin-left: auto;
+  }
+
+  #output {
+    white-space: pre-wrap;
+    background-color: #f4f4f4;
+    padding: 8px;
+    border-radius: 5px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+
+  .tab { display: none; }
+  .tab.active { display: block; }
+  #login-section { text-align: center; }
+</style>
 </head>
 <body>
 
@@ -42,13 +74,15 @@
 
   <div id="main-ui" style="display: none;">
     <h3>Pingu</h3>
-    <p id="credits-display" style="font-weight: bold;">Credits: loading...</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <p id="credits-display" style="font-weight: bold; margin: 0;">Credits: loading...</p>
+      <button id="logout-btn">Logout</button>
+    </div>
 
     <div class="tab-buttons">
       <button id="tab-simple-btn">Simple Email</button>
       <button id="tab-craft-btn">Advanced Email</button>
       <button id="tab-settings-btn">Settings</button>
-      <button id="logout-btn" style="float:right;">Logout</button>
     </div>
 
     <!-- Advanced Email Tab -->
@@ -80,6 +114,8 @@
       <h4>Email Output:</h4>
       <textarea id="output" rows="10"></textarea>
       <button id="craft">Give me another email</button>
+
+      <hr style="border: none; border-top: 1px solid #ccc; margin: 10px 0;">
 
       <button id="copy-email-btn">Copy Email</button>
       <button id="copy-subject-btn">Copy Subject</button>
