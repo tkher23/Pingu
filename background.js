@@ -11,20 +11,20 @@ chrome.runtime.onInstalled.addListener(() => {
 /************ Listen for login popup request ************/
 chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((message) => {
-    if (message.type === "login") {
-      const extensionId = message.extensionId || chrome.runtime.id;
-      const loginUrl = `${LOGIN_URL}?ext=${extensionId}`; // ✅ add ext to URL
+  if (message.type === "login") {
+    const extensionId = message.extensionId || chrome.runtime.id;
+    const loginUrl = `${LOGIN_URL}?ext=${extensionId}`;
 
-      chrome.windows.create({
-        url: loginUrl,
-        type: "popup",
-        width: 500,
-        height: 600
-      }, (newWindow) => {
-        oauthWindowId = newWindow.id;
-      });
-    }
-  });
+    chrome.windows.create({
+      url: loginUrl,
+      type: "popup",
+      width: 500,
+      height: 600
+    }, (newWindow) => {
+      oauthWindowId = newWindow.id;
+    });
+  }
+});
 });
 
 
@@ -35,12 +35,15 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
   if (request.gmailToken) storage.gmailToken = request.gmailToken;
 
   chrome.storage.local.set(storage, () => {
-    // Notify all side panel instances
     chrome.runtime.sendMessage({ type: "loginComplete" });
 
     if (oauthWindowId !== null) {
       chrome.windows.remove(oauthWindowId);
       oauthWindowId = null;
     }
+
+    sendResponse({ success: true }); // ✅ ADD THIS
   });
+
+  return true; // ✅ KEEP THIS for async response
 });

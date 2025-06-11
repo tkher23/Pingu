@@ -76,34 +76,6 @@ async function saveProfile(profile) {
   }
 }
 
-window.addEventListener("message", (event) => {
-  if (event.data.type === "authSuccess") {
-    chrome.storage.local.set({
-      supabaseToken: event.data.supabaseToken,
-      gmailToken: event.data.gmailToken
-    }, () => {
-      console.log("✅ Tokens saved to chrome.storage");
-      // Optionally trigger UI update here
-      loadUI(); // if you have this function
-    });
-  }
-});
-
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === "pingu-auth") {
-    port.onMessage.addListener((msg) => {
-      if (msg.type === "authSuccess") {
-        chrome.storage.local.set({
-          supabaseToken: msg.supabaseToken,
-          gmailToken: msg.gmailToken
-        }, () => {
-          console.log("✅ Tokens saved from login.html");
-          loadUI?.(); // Call your UI update if it exists
-        });
-      }
-    });
-  }
-});
 
 /************ LOGIN FLOW ************/
 async function enforceLogin() {
@@ -111,44 +83,33 @@ async function enforceLogin() {
   await chrome.storage.local.remove("supabaseToken");
 
   const port = chrome.runtime.connect();
-  port.postMessage({ type: "login", extensionId: chrome.runtime.id });
-
-  // 🔁 Poll every 500ms for the Supabase token
-  const waitForToken = async () => {
-    const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
-    if (supabaseToken) {
-      await loadUI(); // ✅ Update the UI once login is complete
-    } else {
-      setTimeout(waitForToken, 500);
-    }
-  };
-
-  waitForToken();
+  port.postMessage({ type: "login" }); // persistent connection
   loginBtn.disabled = false;
 }
-
 loginBtn.addEventListener("click", enforceLogin);
 
-/************ LOGIC TO LOAD UI BASED ON LOGIN ************/
+/************ UI DISPLAY ************/
 async function loadUI() {
   const { supabaseToken } = await chrome.storage.local.get("supabaseToken");
   if (supabaseToken) {
-    // You're logged in — update UI
     console.log("✅ User is logged in");
     loginSection.style.display = "none";
     mainUI.style.display = "block";
+    userToken = supabaseToken;
+    await loadAfterLogin();
   } else {
     loginSection.style.display = "block";
     mainUI.style.display = "none";
   }
 }
+loadUI();
 
-/************ LISTEN FOR LOGIN COMPLETE MESSAGE ************/
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "loginComplete") {
     loadUI();
   }
 });
+
 
 /************ INITIAL UI LOAD WHEN POPUP OPENS ************/
 loadUI();
