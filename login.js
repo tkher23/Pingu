@@ -31,13 +31,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!session) return console.error("No session");
 
   try {
-    await chrome.storage.local.set({
+    chrome.runtime.sendMessageExternal(EXTENSION_ID, {
+      type: "authSuccess",
       supabaseToken: session.access_token,
       gmailToken: session.provider_token
+    }, () => {
+      console.log("✅ Token sent to extension");
+      window.close();
     });
-    console.log("✅ Token stored in chrome.storage.local");
-    window.close();
   } catch (e) {
-    console.error("❌ Could not store in chrome.storage.local:", e);
+    console.error("❌ Failed to send token to extension:", e);
   }
 });
