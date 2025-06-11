@@ -1,21 +1,16 @@
-console.log("🧭 Current URL:", window.location.href);
-console.log("🧭 Extension ID from sessionStorage:", sessionStorage.getItem("extensionId"));
-
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI"
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Step 1: Try to read from query param initially
+// Step 1: Save extension ID on first load (from popup)
 const urlParams = new URLSearchParams(window.location.search);
 const EXT_FROM_QUERY = urlParams.get("ext");
-
-// Save to sessionStorage if it's the first load
 if (EXT_FROM_QUERY) {
   sessionStorage.setItem("extensionId", EXT_FROM_QUERY);
 }
 
-// Step 2: Always read from sessionStorage (survives redirect)
+// Step 2: Always read extension ID from sessionStorage
 const EXTENSION_ID = sessionStorage.getItem("extensionId");
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -33,15 +28,33 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  console.log("📦 Query params:", [...urlParams.entries()]);
-  if (!urlParams.get("code")) return;
-  if (!EXTENSION_ID) return console.error("Missing extension ID");
+  const query = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams(window.location.hash.slice(1));
 
-  const { data: sessionExchange, error: exchangeError } = await supabase.auth.exchangeCodeForSession();
-  if (exchangeError) return console.error("Exchange error:", exchangeError);
+  console.log("🧭 URL:", window.location.href);
+  console.log("🧭 EXTENSION_ID:", EXTENSION_ID);
+  console.log("🧭 query params:", [...query.entries()]);
+  console.log("🧭 hash params:", [...hash.entries()]);
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return console.error("No session");
+  if (!EXTENSION_ID) {
+    console.error("Missing extension ID");
+    return;
+  }
+
+  // Plan A: Code flow
+  if (query.get("code")) {
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession();
+    if (exchangeError) {
+      console.error("Exchange error:", exchangeError);
+    }
+  }
+
+  // Plan B: Try to get session either way
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) {
+    console.error("No session available", error);
+    return;
+  }
 
   try {
     chrome.runtime.sendMessage(EXTENSION_ID, {
@@ -50,9 +63,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       gmailToken: session.provider_token
     }, () => {
       console.log("✅ Sent token to extension");
+      sessionStorage.removeItem("extensionId");
       window.close();
     });
-  } catch (e) {
-    console.error("❌ Failed to send token:", e);
+  } catch (err) {
+    console.error("❌ Failed to send token to extension:", err);
   }
 });
