@@ -32,23 +32,16 @@
     #login-section { text-align: center; }
   </style>
 </head>
-
 <body>
 
-  <!-- LOGIN SECTION -->
   <div id="login-section">
     <h3>Please log in with Google</h3>
     <button id="login-btn">Login with Google</button>
   </div>
 
-  <!-- MAIN APP UI -->
   <div id="main-ui" style="display: none;">
     <h3>Pingu</h3>
-
-    <!-- 🔥 Credits Display -->
-    <p id="credits-display" style="font-weight: bold; margin-bottom: 10px;">
-      Credits: loading...
-    </p>
+    <p id="credits-display" style="font-weight: bold;">Credits: loading...</p>
 
     <div class="tab-buttons">
       <button id="tab-simple-btn">Simple Email</button>
@@ -57,71 +50,81 @@
       <button id="logout-btn" style="float:right;">Logout</button>
     </div>
 
-    <!-- Craft Email Tab -->
+    <!-- Advanced Email Tab -->
     <div class="tab active" id="tab-craft">
       <label for="recipient-name">Recipient's Name:</label>
-      <input id="recipient-name" type="text" placeholder="e.g., Sarah Miller" />
+      <input id="recipient-name" type="text" />
+
+      <label for="recipient-email">Recipient's Email:</label>
+      <input id="recipient-email" type="email" />
 
       <label for="linkedin">LinkedIn Text:</label>
-      <textarea id="linkedin" rows="4" placeholder="Paste LinkedIn About section..."></textarea>
+      <textarea id="linkedin" rows="4"></textarea>
 
       <label for="bio">Bio Page Text:</label>
-      <textarea id="bio" rows="4" placeholder="Paste bio page text..."></textarea>
+      <textarea id="bio" rows="4"></textarea>
 
       <label for="values">Company Values Text:</label>
-      <textarea id="values" rows="4" placeholder="Paste company values text..."></textarea>
+      <textarea id="values" rows="4"></textarea>
 
       <label for="interest">Internship Interest:</label>
-      <input id="interest" type="text" placeholder="e.g., financial tech, sustainability, product" />
+      <input id="interest" type="text" />
 
       <button id="generate-advanced-email">Generate Advanced Email</button>
 
       <h4>Subject Line Output:</h4>
-      <textarea id="subject-output" rows="2" style="width: 100%; margin-top: 10px;"></textarea>
+      <textarea id="subject-output" rows="2"></textarea>
       <button id="generate-subject">Give me another subject</button>
 
       <h4>Email Output:</h4>
-      <textarea id="output" rows="10" style="width: 100%; margin-top: 10px;"></textarea>
+      <textarea id="output" rows="10"></textarea>
       <button id="craft">Give me another email</button>
 
-      <div style="margin-top: 10px;"> </div>      
+      <button id="copy-email-btn">Copy Email</button>
+      <button id="copy-subject-btn">Copy Subject</button>
+      <div id="copy-confirmation"></div>
 
-      <button id="copy-email-btn" style="margin-top: 5px;">Copy Email</button>
-      <button id="copy-subject-btn" style="margin-top: 5px;">Copy Subject</button>
-      <div id="copy-confirmation" style="color: green; font-size: 0.9em;"></div>
+      <button id="send-gmail-btn">Send Email via Gmail</button>
+      <span id="send-status"></span>
     </div>
 
     <!-- Simple Email Tab -->
     <div class="tab" id="tab-simple">
       <label for="simple-recipient">Recipient's Name:</label>
-      <input id="simple-recipient" type="text" placeholder="e.g., Alex Kim" />
+      <input id="simple-recipient" type="text" />
+
+      <label for="simple-recipient-email">Recipient's Email:</label>
+      <input id="simple-recipient-email" type="email" />
 
       <label for="simple-interest">Internship Interest:</label>
-      <input id="simple-interest" type="text" placeholder="e.g., sustainability, software" />
+      <input id="simple-interest" type="text" />
 
       <button id="generate-simple-email">Generate Simple Email</button>
 
       <h4>Subject Line Output:</h4>
-      <textarea id="simple-subject-output" rows="2" style="width: 100%; margin-top: 10px;"></textarea>
+      <textarea id="simple-subject-output" rows="2"></textarea>
 
       <h4>Email Output:</h4>
-      <textarea id="simple-email-output" rows="10" style="width: 100%; margin-top: 10px;"></textarea>
+      <textarea id="simple-email-output" rows="10"></textarea>
 
-      <button id="copy-simple-email-btn" style="margin-top: 5px;">Copy Email</button>
-      <button id="copy-simple-subject-btn" style="margin-top: 5px;">Copy Subject</button>
-      <div id="simple-copy-confirmation" style="color: green; font-size: 0.9em;"></div>
+      <button id="copy-simple-email-btn">Copy Email</button>
+      <button id="copy-simple-subject-btn">Copy Subject</button>
+      <div id="simple-copy-confirmation"></div>
+
+      <button id="send-simple-gmail-btn">Send Email via Gmail</button>
+      <span id="simple-send-status"></span>
     </div>
 
     <!-- Settings Tab -->
     <div class="tab" id="tab-settings">
       <label for="user-name">Your Name:</label>
-      <input id="user-name" type="text" placeholder="e.g., Tanish Kher" />
+      <input id="user-name" type="text" />
 
       <label for="user-intro">Brief Intro:</label>
-      <textarea id="user-intro" rows="3" placeholder="e.g., second-year student..."></textarea>
+      <textarea id="user-intro" rows="3"></textarea>
 
       <label for="default-interest">Default Career/Internship Interest:</label>
-      <input id="default-interest" type="text" placeholder="e.g., private equity" />
+      <input id="default-interest" type="text" />
 
       <label for="persona-context">Personal Context:</label>
       <textarea id="persona-context" rows="3"></textarea>
@@ -136,7 +139,7 @@
       </select>
 
       <button id="save-profile">Save Profile</button>
-      <div id="save-msg" style="font-size: 0.9em; color: green;"></div>
+      <div id="save-msg"></div>
     </div>
   </div>
 

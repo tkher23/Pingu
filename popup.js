@@ -484,3 +484,87 @@ copySimpleSubjectBtn.addEventListener("click", async () => {
     simpleCopyMsg.textContent = "Failed to copy.";
   }
 });
+
+
+/** SENDING EMAIL FUNCTIONS */
+const recipientEmailField = document.getElementById("recipient-email");
+const simpleRecipientEmailField = document.getElementById("simple-recipient-email");
+
+async function sendGmail(toEmail, subject, body) {
+  const { gmailToken } = await chrome.storage.local.get("gmailToken");
+
+  const message = [
+    `To: ${toEmail}`,
+    `Subject: ${subject}`,
+    '',
+    body
+  ].join('\n');
+
+  const rawBase64 = btoa(unescape(encodeURIComponent(message)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${gmailToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ raw: rawBase64 })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || "Failed to send Gmail");
+  }
+}
+
+/************ GMAIL SEND BUTTON LISTENERS (AFTER DOM READY) ************/
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("send-gmail-btn").addEventListener("click", async () => {
+    const to = recipientEmailField.value.trim();
+    const subject = subjectOutputField.value.trim();
+    const body = outputField.value.trim();
+
+    if (!to || !subject || !body) {
+      alert("Missing recipient email, subject, or body");
+      return;
+    }
+
+    try {
+      await sendGmail(to, subject, body);
+      document.getElementById("send-status").textContent = "✅ Email sent!";
+    } catch (err) {
+      console.error("Gmail send failed:", err);
+      document.getElementById("send-status").textContent = "❌ Send failed.";
+    }
+
+    setTimeout(() => {
+      document.getElementById("send-status").textContent = "";
+    }, 3000);
+  });
+
+  document.getElementById("send-simple-gmail-btn").addEventListener("click", async () => {
+    const to = simpleRecipientEmailField.value.trim();
+    const subject = simpleSubjectOutput.value.trim();
+    const body = simpleEmailOutput.value.trim();
+
+    if (!to || !subject || !body) {
+      alert("Missing recipient email, subject, or body");
+      return;
+    }
+
+    try {
+      await sendGmail(to, subject, body);
+      document.getElementById("simple-send-status").textContent = "✅ Email sent!";
+    } catch (err) {
+      console.error("Gmail send failed:", err);
+      document.getElementById("simple-send-status").textContent = "❌ Send failed.";
+    }
+
+    setTimeout(() => {
+      document.getElementById("simple-send-status").textContent = "";
+    }, 3000);
+  });
+});

@@ -18,7 +18,7 @@ chrome.runtime.onConnect.addListener((port) => {
         width: 500,
         height: 600
       }, (newWindow) => {
-          oauthWindowId = newWindow.id; // Track OAuth window ID
+        oauthWindowId = newWindow.id; // Track OAuth window ID
       });
     }
   });
@@ -26,15 +26,17 @@ chrome.runtime.onConnect.addListener((port) => {
 
 /************ Listen for token received externally from hosted login page ************/
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-  if (request.token) {
-    chrome.storage.local.set({ supabaseToken: request.token }, () => {
-      // Notify all side panel instances
-      chrome.runtime.sendMessage({ type: "loginComplete" });
+  const storage = {};
+  if (request.supabaseToken) storage.supabaseToken = request.supabaseToken;
+  if (request.gmailToken) storage.gmailToken = request.gmailToken;
 
-      if (oauthWindowId !== null) {
-        chrome.windows.remove(oauthWindowId);
-        oauthWindowId = null;
-      }
-    });
-  }
+  chrome.storage.local.set(storage, () => {
+    // Notify all side panel instances
+    chrome.runtime.sendMessage({ type: "loginComplete" });
+
+    if (oauthWindowId !== null) {
+      chrome.windows.remove(oauthWindowId);
+      oauthWindowId = null;
+    }
+  });
 });
