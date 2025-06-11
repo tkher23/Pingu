@@ -21,33 +21,34 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  // If this is a redirect back from Google
   if (!window.location.search.includes("code=")) return;
 
   if (!EXTENSION_ID) {
-    console.error("Missing extension ID in URL.");
+    console.error("❌ Missing extension ID in URL.");
     return;
   }
 
   const { data, error } = await supabase.auth.exchangeCodeForSession();
   if (error) {
-    console.error("Exchange error:", error);
+    console.error("❌ Exchange error:", error);
     return;
   }
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    if (window.opener) {
-  window.opener.postMessage({
+  if (!session) {
+    console.error("❌ No session found after exchange.");
+    return;
+  }
+
+  // ✅ Create a long-lived connection and send token through it
+  const port = chrome.runtime.connect({ name: "pingu-auth" });
+
+  port.postMessage({
     type: "authSuccess",
     supabaseToken: session.access_token,
     gmailToken: session.provider_token
-  }, "*");
+  });
+
+  console.log("✅ Token sent via port. Closing window...");
   window.close();
-} else {
-  console.error("❌ No opener window found — cannot send token to extension.");
-}
-  } else {
-    console.error("Session is null after exchange.");
-  }
 });
