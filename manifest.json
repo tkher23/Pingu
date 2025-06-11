@@ -23,7 +23,7 @@
     "default_path": "popup.html"
   },
   "externally_connectable": {
-    "matches": ["https://pingu-login.vercel.app/*"]
+    "matches": ["https://pingu-login.vercel.app/login.html"]
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

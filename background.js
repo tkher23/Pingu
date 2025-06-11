@@ -12,17 +12,21 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((message) => {
     if (message.type === "login") {
+      const extensionId = message.extensionId || chrome.runtime.id;
+      const loginUrl = `${LOGIN_URL}?ext=${extensionId}`; // ✅ add ext to URL
+
       chrome.windows.create({
-        url: LOGIN_URL,
+        url: loginUrl,
         type: "popup",
         width: 500,
         height: 600
       }, (newWindow) => {
-        oauthWindowId = newWindow.id; // Track OAuth window ID
+        oauthWindowId = newWindow.id;
       });
     }
   });
 });
+
 
 /************ Listen for token received externally from hosted login page ************/
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
