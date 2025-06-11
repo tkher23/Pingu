@@ -37,14 +37,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    chrome.runtime.sendMessageExternal(EXTENSION_ID, {
-      supabaseToken: session.access_token,
-      gmailToken: session.provider_token
-    }).then(() => {
-      window.close();
-    }).catch(err => {
-      console.error("Failed to send token to extension:", err);
-    });
+    if (window.opener) {
+  window.opener.postMessage({
+    type: "authSuccess",
+    supabaseToken: session.access_token,
+    gmailToken: session.provider_token
+  }, "*");
+  window.close();
+} else {
+  console.error("❌ No opener window found — cannot send token to extension.");
+}
   } else {
     console.error("Session is null after exchange.");
   }
