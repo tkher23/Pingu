@@ -1,39 +1,28 @@
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
-const SUPABASE_ANON_KEY = "...";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI"
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Step 1: Try to read from query param initially
 const urlParams = new URLSearchParams(window.location.search);
+const EXT_FROM_QUERY = urlParams.get("ext");
 
-// 1. Try to get extension ID from state first (safely decoded)
-let EXTENSION_ID = null;
-try {
-  const encodedState = urlParams.get("state");
-  if (encodedState) {
-    const decoded = JSON.parse(atob(decodeURIComponent(encodedState)));
-    EXTENSION_ID = decoded.ext;
-  }
-} catch (err) {
-  console.error("Failed to decode state:", err);
+// Save to sessionStorage if it's the first load
+if (EXT_FROM_QUERY) {
+  sessionStorage.setItem("extensionId", EXT_FROM_QUERY);
 }
 
-// 2. Fallback for direct visits
-if (!EXTENSION_ID) {
-  EXTENSION_ID = urlParams.get("ext");
-}
+// Step 2: Always read from sessionStorage (survives redirect)
+const EXTENSION_ID = sessionStorage.getItem("extensionId");
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
-  const safeState = encodeURIComponent(btoa(JSON.stringify({ ext: EXTENSION_ID })));
   const redirectUrl = `${window.location.origin}/login.html`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: redirectUrl,
-      scopes: 'https://www.googleapis.com/auth/gmail.send',
-      queryParams: {
-        state: safeState
-      }
+      scopes: 'https://www.googleapis.com/auth/gmail.send'
     }
   });
 
