@@ -1,9 +1,9 @@
 const SUPABASE_URL = "https://ishnglghmfijbgtuhxzd.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzaG5nbGdobWZpamJndHVoeHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0Nzk5ODIsImV4cCI6MjA2NDA1NTk4Mn0.WmapiFoeezlJ0v5rqHBl3gedsbRZmhvWeL_x_2U_vcI" // truncated for brevity
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Get extension ID from query parameter
+// Get extension ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const EXTENSION_ID = urlParams.get("ext");
 
@@ -31,15 +31,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!session) return console.error("No session");
 
   try {
-    chrome.runtime.sendMessageExternal(EXTENSION_ID, {
+    chrome.runtime.sendMessage(EXTENSION_ID, {
       type: "authSuccess",
       supabaseToken: session.access_token,
       gmailToken: session.provider_token
     }, () => {
-      console.log("✅ Token sent to extension");
+      console.log("✅ Sent token to extension");
       window.close();
     });
   } catch (e) {
-    console.error("❌ Failed to send token to extension:", e);
+    console.error("❌ Failed to send token:", e);
   }
 });
