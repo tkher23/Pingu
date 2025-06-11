@@ -3,15 +3,19 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Get extension ID from URL query parameter
+const urlParams = new URLSearchParams(window.location.search);
+const EXTENSION_ID = urlParams.get("ext");
+
 document.getElementById("loginBtn").addEventListener("click", async () => {
-  console.log(window.location.href)
+  console.log("Redirecting to:", window.location.href);
   const { data, error } = await supabase.auth.signInWithOAuth({
-  provider: 'google',
-  options: {
-    redirectTo: window.location.href,
-    scopes: 'https://www.googleapis.com/auth/gmail.send'
-  }
-});
+    provider: 'google',
+    options: {
+      redirectTo: window.location.href,
+      scopes: 'https://www.googleapis.com/auth/gmail.send'
+    }
+  });
 
   if (error) console.error("OAuth error:", error);
 });
@@ -19,16 +23,24 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 window.addEventListener("DOMContentLoaded", async () => {
   // Handle redirect callback to finalize session
   const { data, error } = await supabase.auth.exchangeCodeForSession();
-  if (error) console.error("Exchange error:", error);
+  if (error) {
+    console.error("Exchange error:", error);
+    return;
+  }
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
+  if (session && EXTENSION_ID) {
     const { access_token, provider_token } = session;
 
-    chrome.runtime.sendMessage("kdgeijgnalidmiaeeabkccigfedhnbhi", {
-    supabaseToken: access_token,
-    gmailToken: provider_token}).then(() => {
-    window.close();
+    chrome.runtime.sendMessageExternal(EXTENSION_ID, {
+      supabaseToken: access_token,
+      gmailToken: provider_token
+    }).then(() => {
+      window.close();
+    }).catch(err => {
+      console.error("Failed to message extension:", err);
     });
+  } else if (!EXTENSION_ID) {
+    console.error("Missing extension ID in URL.");
   }
 });
