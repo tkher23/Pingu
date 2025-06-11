@@ -22,7 +22,7 @@ chrome.runtime.onConnect.addListener((port) => {
       height: 600
     }, (newWindow) => {
       oauthWindowId = newWindow.id;
-    });
+    }); 
   }
 });
 });
