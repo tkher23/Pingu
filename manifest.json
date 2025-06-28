@@ -16,6 +16,7 @@
   },
   "action": {
     "default_title": "Pingu",
+    "default_popup": "popup.html",
     "default_width": 360,
     "default_height": 700
   },
@@ -29,6 +30,6 @@
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "icons": {
-  "128": "icon.png"
-}
+    "128": "public/icon.png"
+  }
 }
