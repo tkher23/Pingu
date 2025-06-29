@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button, TextInput, Group, Textarea, CopyButton, Notification, Paper, Title, Stack, Divider, Box } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useCredits from '../hooks/useCredits';
 import useGmailSender from '../hooks/useGmailSender';
@@ -116,82 +117,53 @@ const EmailForm = () => {
   };
 
   return (
-    <div>
-      <h3>Email Generator</h3>
-      <div>Credits: {creditsLoading ? 'Loading...' : credits ?? 'N/A'}</div>
-      <div>
-        <input
-          placeholder="Recipient Name"
-          value={recipientName}
-          onChange={e => setRecipientName(e.target.value)}
-        />
-        <input
-          placeholder="Recipient Email"
-          value={recipientEmail}
-          onChange={e => setRecipientEmail(e.target.value)}
-        />
-        <input
-          placeholder="LinkedIn URL"
-          value={linkedin}
-          onChange={e => setLinkedin(e.target.value)}
-        />
-        <input
-          placeholder="Bio Page"
-          value={bio}
-          onChange={e => setBio(e.target.value)}
-        />
-        <input
-          placeholder="Values Page"
-          value={values}
-          onChange={e => setValues(e.target.value)}
-        />
-        <input
-          placeholder="Internship Interest"
-          value={interest}
-          onChange={e => setInterest(e.target.value)}
-        />
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <button onClick={handleGenerateSubject} disabled={generating}>
-          Generate Subject
-        </button>
-        <input
-          style={{ width: '100%' }}
-          value={subject}
-          readOnly
-        />
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(subject);
-          }}
-        >
-          Copy Subject
-        </button>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <button onClick={handleGenerateEmail} disabled={generating}>
-          Generate Email
-        </button>
-        <textarea
-          style={{ width: '100%', minHeight: 100 }}
-          value={body}
-          readOnly
-        />
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(body);
-          }}
-        >
-          Copy Email
-        </button>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <button onClick={handleSendGmail} disabled={generating}>
-          Send with Gmail
-        </button>
-        <span>{sendStatus}</span>
-      </div>
-    </div>
+    <Paper shadow="md" radius="md" p="lg" withBorder>
+      <Stack spacing="md">
+        <Title order={3} align="center" color="blue.7">Email Generator</Title>
+        <Group position="apart">
+          <Box fw={500}>Credits:</Box>
+          <Box>{creditsLoading ? 'Loading...' : credits ?? 'N/A'}</Box>
+        </Group>
+        <Divider my="xs" label="Recipient Info" labelPosition="center"/>
+        <Group grow>
+          <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="md"/>
+          <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="md"/>
+        </Group>
+        <TextInput label="LinkedIn URL" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="md"/>
+        <TextInput label="Bio Page" value={bio} onChange={e => setBio(e.target.value)} radius="md" size="md"/>
+        <TextInput label="Values Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="md"/>
+        <TextInput label="Internship Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="md"/>
+        <Divider my="xs" label="Subject" labelPosition="center"/>
+        <Group>
+          <Button onClick={handleGenerateSubject} loading={generating} color="blue" radius="md">Generate Subject</Button>
+          <TextInput value={subject} readOnly style={{ flex: 1 }} radius="md" size="md"/>
+          <CopyButton value={subject} timeout={1500}>
+            {({ copied, copy }) => (
+              <Button color={copied ? 'teal' : 'blue'} onClick={copy} radius="md">
+                {copied ? 'Copied' : 'Copy Subject'}
+              </Button>
+            )}
+          </CopyButton>
+        </Group>
+        <Divider my="xs" label="Email Body" labelPosition="center"/>
+        <Group align="flex-start">
+          <Button onClick={handleGenerateEmail} loading={generating} color="blue" radius="md">Generate Email</Button>
+          <Textarea value={body} readOnly minRows={4} style={{ flex: 1 }} radius="md" size="md"/>
+          <CopyButton value={body} timeout={1500}>
+            {({ copied, copy }) => (
+              <Button color={copied ? 'teal' : 'blue'} onClick={copy} radius="md">
+                {copied ? 'Copied' : 'Copy Email'}
+              </Button>
+            )}
+          </CopyButton>
+        </Group>
+        <Divider my="xs"/>
+        <Group position="right">
+          <Button onClick={handleSendGmail} loading={generating} color="teal" radius="md">Send with Gmail</Button>
+        </Group>
+        {sendStatus && <Notification color={sendStatus.includes('✅') ? 'teal' : 'red'}>{sendStatus}</Notification>}
+      </Stack>
+    </Paper>
   );
 };
 

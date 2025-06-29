@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Tabs as MantineTabs } from '@mantine/core';
+
 const Tabs = ({ tabs, children }) => {
-  const [active, setActive] = useState(0);
   return (
-    <div>
-      <div style={{ display: 'flex' }}>
+    <MantineTabs defaultValue={tabs[0]}>
+      <MantineTabs.List>
         {tabs.map((tab, i) => (
-          <button key={tab} onClick={() => setActive(i)}>{tab}</button>
+          <MantineTabs.Tab value={tab} key={tab}>{tab}</MantineTabs.Tab>
         ))}
-      </div>
-      <div>{children[active]}</div>
-    </div>
+      </MantineTabs.List>
+      {children.map((child, i) => (
+        <MantineTabs.Panel value={tabs[i]} key={tabs[i]}>
+          {child}
+        </MantineTabs.Panel>
+      ))}
+    </MantineTabs>
   );
 };
+
 export default Tabs;

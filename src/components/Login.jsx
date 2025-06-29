@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button, Group, Text, Notification } from '@mantine/core';
 import useLogin from '../hooks/useLogin';
 
 const Login = ({ onLogin }) => {
@@ -9,13 +10,13 @@ const Login = ({ onLogin }) => {
   }, [loggedIn, onLogin]);
 
   return (
-    <div>
-      <h3>Login</h3>
-      <button onClick={startLogin} disabled={loading}>
-        {loading ? 'Logging in...' : 'Login with Google'}
-      </button>
-      {error && <div style={{ color: 'red' }}>{error.message}</div>}
-    </div>
+    <Group direction="column" spacing="md" position="center" style={{ minHeight: 200 }}>
+      <Text size="xl" weight={700}>Sign in to Pingu</Text>
+      <Button onClick={startLogin} loading={loading} size="md">
+        Login with Google
+      </Button>
+      {error && <Notification color="red">{error.message}</Notification>}
+    </Group>
   );
 };
 

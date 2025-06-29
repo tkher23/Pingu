@@ -13,6 +13,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@mantine/core": "^8.1.2",
+    "@mantine/hooks": "^8.1.2",
+    "@mantine/modals": "^8.1.2",
+    "@mantine/notifications": "^8.1.2",
     "@supabase/supabase-js": "^2.49.9",
     "@vitejs/plugin-react": "^4.6.0",
     "esbuild": "^0.25.5"

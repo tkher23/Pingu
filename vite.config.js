@@ -3,13 +3,21 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
+  base: './', // Ensure relative paths in built HTML
   plugins: [react()],
   build: {
-    rollupOptions: {
-      input: resolve(__dirname, 'src/popup.html') // Output dist/popup.html
-    },
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        popup: resolve(__dirname, 'popup.html'),
+      },
+      output: {
+        assetFileNames: '[name][extname]',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js',
+      }
+    }
   },
   publicDir: 'public',
 });
