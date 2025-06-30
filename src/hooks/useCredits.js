@@ -13,6 +13,7 @@ const useCredits = () => {
     try {
       const { supabaseToken } = await chrome.storage.local.get('supabaseToken');
       if (!supabaseToken) throw new Error('No user token');
+      console.debug('[useCredits] Fetching credits with token:', supabaseToken);
       const res = await fetch(`${BACKEND_URL}/api/get-credits`, {
         method: 'GET',
         headers: {
@@ -24,12 +25,15 @@ const useCredits = () => {
         setCredits(data.credits);
         return data.credits;
       } else {
+        const errText = await res.text();
         setCredits(null);
-        throw new Error('Error loading credits');
+        console.error('[useCredits] Error loading credits:', errText);
+        throw new Error('Error loading credits: ' + errText);
       }
     } catch (err) {
-      setError(err);
+      setError(err.message || err);
       setCredits(null);
+      console.error('[useCredits] Error:', err);
       return null;
     } finally {
       setLoading(false);

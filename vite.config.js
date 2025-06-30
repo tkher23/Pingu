@@ -3,14 +3,15 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  base: './', // Ensure relative paths in built HTML
+  base: './',
   plugins: [react()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, 'popup.html'),
+        // 🔥 This tells Vite: "Build this file, but output it as dist/popup.html"
+        'popup': resolve(__dirname, 'popup.html'),
       },
       output: {
         assetFileNames: '[name][extname]',

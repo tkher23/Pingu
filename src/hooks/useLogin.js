@@ -51,6 +51,8 @@ const useLogin = () => {
   const logout = useCallback(async () => {
     await chrome.storage.local.remove('supabaseToken');
     setLoggedIn(false);
+    // Notify listeners (e.g., Popup.jsx) that logout occurred
+    window.dispatchEvent(new Event('pingu-logout'));
   }, []);
 
   return { loggedIn, loading, error, startLogin, logout, checkLogin };

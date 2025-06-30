@@ -14,17 +14,23 @@ const useProfile = () => {
     try {
       const { supabaseToken } = await chrome.storage.local.get('supabaseToken');
       if (!supabaseToken) throw new Error('No user token');
+      console.debug('[useProfile] Fetching profile with token:', supabaseToken);
       const res = await fetch(`${BACKEND_URL}/api/user-settings`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${supabaseToken}` }
       });
-      if (!res.ok) throw new Error('Failed to fetch user settings');
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[useProfile] Failed to fetch user settings:', errText);
+        throw new Error('Failed to fetch user settings: ' + errText);
+      }
       const data = await res.json();
       setProfile(data);
       return data;
     } catch (err) {
-      setError(err);
+      setError(err.message || err);
       setProfile({});
+      console.error('[useProfile] Error:', err);
       return {};
     } finally {
       setLoading(false);
@@ -38,7 +44,8 @@ const useProfile = () => {
     try {
       const { supabaseToken } = await chrome.storage.local.get('supabaseToken');
       if (!supabaseToken) throw new Error('No user token');
-      await fetch(`${BACKEND_URL}/api/user-settings`, {
+      console.debug('[useProfile] Saving profile with token:', supabaseToken, profileObj);
+      const res = await fetch(`${BACKEND_URL}/api/user-settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,9 +53,15 @@ const useProfile = () => {
         },
         body: JSON.stringify(profileObj)
       });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[useProfile] Failed to save user settings:', errText);
+        throw new Error('Failed to save user settings: ' + errText);
+      }
       setProfile(profileObj);
     } catch (err) {
-      setError(err);
+      setError(err.message || err);
+      console.error('[useProfile] Error:', err);
     } finally {
       setLoading(false);
     }

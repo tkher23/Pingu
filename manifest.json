@@ -16,12 +16,12 @@
   },
   "action": {
     "default_title": "Pingu",
-    "default_popup": "popup.html",
+    "default_popup": "dist/popup.html",
     "default_width": 360,
     "default_height": 700
   },
   "side_panel": {
-    "default_path": "popup.html"
+    "default_path": "dist/popup.html"
   },
   "externally_connectable": {
     "matches": ["https://pingu-login.vercel.app/login.html"]
