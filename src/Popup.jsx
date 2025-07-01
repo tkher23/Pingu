@@ -9,14 +9,17 @@ import Login from './components/Login';
 import MainUI from './components/MainUI';
 
 const Popup = () => {
-  const { loggedIn } = useLogin();
-  // Listen for logout event to force re-render
+  const { loggedIn, checkLogin } = useLogin();
+  // Listen for logout event to force re-render and re-check login
   const [logoutTick, setLogoutTick] = React.useState(0);
   React.useEffect(() => {
-    const handler = () => setLogoutTick(t => t + 1);
+    const handler = () => {
+      setLogoutTick(t => t + 1);
+      checkLogin(); // Ensure login state is refreshed after logout
+    };
     window.addEventListener('pingu-logout', handler);
     return () => window.removeEventListener('pingu-logout', handler);
-  }, []);
+  }, [checkLogin]);
   return loggedIn ? <MainUI /> : <Login />;
 };
 

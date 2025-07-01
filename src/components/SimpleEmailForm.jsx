@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Group, TextInput, Textarea, Paper, Stack, CopyButton, Notification } from '@mantine/core';
+import { Button, Group, TextInput, Textarea, Stack, CopyButton, Notification } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useGmailSender from '../hooks/useGmailSender';
 import useCredits from '../hooks/useCredits';
+
+const blueButtonStyle = {
+  background: '#e6f3ff',
+  color: '#000a14',
+  border: '1px solid #000a14',
+  fontWeight: 600,
+  fontSize: 14,
+  transition: 'background 0.15s, color 0.15s, border 0.15s',
+};
+const blueButtonHover = {
+  background: '#5fafde',
+  color: 'white',
+  border: 'none',
+};
 
 const SimpleEmailForm = () => {
   const { profile, getProfile, error: profileError } = useProfile();
@@ -16,6 +30,9 @@ const SimpleEmailForm = () => {
   const [body, setBody] = useState('');
   const [generating, setGenerating] = useState(false);
   const [sendStatus, setSendStatus] = useState('');
+  const [hoveredGenerate, setHoveredGenerate] = useState(false);
+  const [hoveredCopySubject, setHoveredCopySubject] = useState(false);
+  const [hoveredCopyBody, setHoveredCopyBody] = useState(false);
 
   useEffect(() => {
     getProfile();
@@ -29,6 +46,14 @@ const SimpleEmailForm = () => {
     setSubject(localStorage.getItem('se_subject') || '');
     setBody(localStorage.getItem('se_body') || '');
   }, []);
+
+  // If Internship Interest is empty after profile loads, set it to default_interest
+  useEffect(() => {
+    if (profile && profile.default_interest && !interest) {
+      setInterest(profile.default_interest);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   // Persist to localStorage on change
   useEffect(() => { localStorage.setItem('se_recipientName', recipientName); }, [recipientName]);
@@ -117,50 +142,70 @@ const SimpleEmailForm = () => {
   };
 
   return (
-    <Paper shadow="md" radius="md" p="lg" withBorder style={{ background: 'var(--mantine-color-dark-6)', border: '1px solid var(--mantine-color-dark-4)' }}>
+    <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
       <Stack spacing="xl">
         {(profileError) && (
           <Notification color="red" title="Error" mb="md">
             {profileError && <div>Profile: {profileError.toString()}</div>}
           </Notification>
         )}
-        <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="md"
-          styles={{
-            input: { background: 'var(--mantine-color-dark-7)', color: 'var(--mantine-color-gray-1)' },
-            label: { color: 'var(--mantine-color-gray-2)', fontWeight: 500 }
-          }}
+        <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
         />
-        <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="md"
-          styles={{
-            input: { background: 'var(--mantine-color-dark-7)', color: 'var(--mantine-color-gray-1)' },
-            label: { color: 'var(--mantine-color-gray-2)', fontWeight: 500 }
-          }}
+        <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
         />
-        <TextInput label="Internship Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="md"
-          styles={{
-            input: { background: 'var(--mantine-color-dark-7)', color: 'var(--mantine-color-gray-1)' },
-            label: { color: 'var(--mantine-color-gray-2)', fontWeight: 500 }
-          }}
+        <TextInput label="Internship Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
         />
         <Group spacing="md" grow align="flex-end">
-          <Button onClick={handleGenerate} loading={generating} radius="md" color="blue" style={{ minWidth: 120, fontWeight: 600 }}>Generate</Button>
+          <Button
+            onClick={handleGenerate}
+            loading={generating}
+            radius="md"
+            style={{ ...blueButtonStyle, ...(hoveredGenerate ? blueButtonHover : {}) }}
+            onMouseEnter={() => setHoveredGenerate(true)}
+            onMouseLeave={() => setHoveredGenerate(false)}
+          >
+            Generate
+          </Button>
         </Group>
-        <TextInput label="Subject" value={subject} readOnly radius="md" size="md"
-          styles={{ input: { background: 'var(--mantine-color-dark-7)', color: 'var(--mantine-color-gray-1)' }, label: { color: 'var(--mantine-color-gray-2)', fontWeight: 500 } }}
+        <TextInput label="Subject" value={subject} onChange={e => setSubject(e.target.value)} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
         />
         <CopyButton value={subject} timeout={1500}>
           {({ copied, copy }) => (
-            <Button color={copied ? 'teal' : 'blue'} onClick={copy} radius="md" style={{ minWidth: 90, fontWeight: 600 }}>
+            <Button
+              style={{ ...blueButtonStyle, ...(hoveredCopySubject ? blueButtonHover : {}) }}
+              onClick={copy}
+              radius="md"
+              onMouseEnter={() => setHoveredCopySubject(true)}
+              onMouseLeave={() => setHoveredCopySubject(false)}
+            >
               {copied ? 'Copied' : 'Copy'}
             </Button>
           )}
         </CopyButton>
-        <Textarea label="Email Body" value={body} readOnly minRows={4} radius="md" size="md"
-          styles={{ input: { background: 'var(--mantine-color-dark-7)', color: 'var(--mantine-color-gray-1)' }, label: { color: 'var(--mantine-color-gray-2)', fontWeight: 500 } }}
+        <Textarea label="Email Body" value={body} onChange={e => setBody(e.target.value)} minRows={4} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
         />
         <CopyButton value={body} timeout={1500}>
           {({ copied, copy }) => (
-            <Button color={copied ? 'teal' : 'blue'} onClick={copy} radius="md" style={{ minWidth: 90, fontWeight: 600 }}>
+            <Button
+              style={{ ...blueButtonStyle, ...(hoveredCopyBody ? blueButtonHover : {}) }}
+              onClick={copy}
+              radius="md"
+              onMouseEnter={() => setHoveredCopyBody(true)}
+              onMouseLeave={() => setHoveredCopyBody(false)}
+            >
               {copied ? 'Copied' : 'Copy'}
             </Button>
           )}
@@ -170,7 +215,8 @@ const SimpleEmailForm = () => {
         </Group>
         {sendStatus && <Notification color={sendStatus.includes('✅') ? 'teal' : 'red'}>{sendStatus}</Notification>}
       </Stack>
-    </Paper>
+      <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
+    </form>
   );
 };
 
