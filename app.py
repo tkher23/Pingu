@@ -321,6 +321,7 @@ def create_checkout():
     try:
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         user_id = get_user_id_from_token(token)
+        print("DEBUG: user_id from token:", user_id)  # <-- Debug print
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
         data = request.get_json()
@@ -329,11 +330,14 @@ def create_checkout():
         cancel_url = data.get("cancel_url")
         # Fetch user email and stripe_customer_id from Supabase
         url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=email,stripe_customer_id"
+        print("DEBUG: Supabase user_profiles URL:", url)  # <-- Debug print
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
         }
         response = requests.get(url, headers=headers)
+        print("DEBUG: Supabase response status:", response.status_code)  # <-- Debug print
+        print("DEBUG: Supabase response JSON:", response.text)  # <-- Debug print
         if not response.ok or not response.json():
             return jsonify({"error": "User not found"}), 404
         user = response.json()[0]
