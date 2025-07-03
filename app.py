@@ -339,7 +339,7 @@ def create_checkout():
         print("DEBUG: Supabase response status:", response.status_code)  # <-- Debug print
         print("DEBUG: Supabase response JSON:", response.text)  # <-- Debug print
         if not response.ok or not response.json():
-            return jsonify({"error": user_id}), 404
+            return jsonify({"error": response.status_code + response.text}), 404
         user = response.json()[0]
         email = user.get("email")
         stripe_customer_id = user.get("stripe_customer_id")
