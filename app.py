@@ -5,7 +5,9 @@ from backend import process_profiles_batch  # Import your processing logic
 from flask_cors import CORS
 import json
 import requests
-
+from stripe_utils import create_checkout_session
+import stripe
+from datetime import datetime, timedelta
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -13,6 +15,7 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 app = Flask(__name__)
 CORS(app)
@@ -59,6 +62,47 @@ def decrement_user_credits(user_id):
     if not response.ok:
         print("⚠️ Failed to decrement credits:", response.text)
 
+def get_user_trial_status(user_id):
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date"
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.ok and response.json():
+        user = response.json()[0]
+        plan_type = user.get("plan_type", "trial")
+        credits = user.get("credits", 0)
+        trial_end_date = user.get("trial_end_date")
+        return plan_type, credits, trial_end_date
+    return "trial", 0, None
+
+def initialize_trial_if_needed(user_id):
+    # Check if user has trial fields set, if not, initialize
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,trial_end_date,credits"
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.ok and response.json():
+        user = response.json()[0]
+        if not user.get("plan_type") or user.get("plan_type") == "trial":
+            # If trial_end_date or credits not set, initialize
+            needs_update = False
+            patch = {}
+            if not user.get("trial_end_date"):
+                patch["trial_end_date"] = (datetime.utcnow() + timedelta(days=7)).date().isoformat()
+                needs_update = True
+            if user.get("credits") is None or user.get("credits", 0) == 0:
+                patch["credits"] = 50
+                needs_update = True
+            if needs_update:
+                patch["plan_type"] = "trial"
+                patch_url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}"
+                patch_headers = headers.copy()
+                patch_headers["Content-Type"] = "application/json"
+                requests.patch(patch_url, headers=patch_headers, json=patch)
 
 @app.route('/api/process-spreadsheet', methods=['POST'])
 def process_spreadsheet():
@@ -107,10 +151,18 @@ def process_single_profile():
         user_id = get_user_id_from_token(token)
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
-        # 🚫 Check if user has credits remaining
-        user_credits = get_user_credits(user_id)
+        # 🟢 Initialize trial if needed
+        initialize_trial_if_needed(user_id)
+        # 🚫 Check if user has credits and trial status
+        plan_type, user_credits, trial_end_date = get_user_trial_status(user_id)
+        if plan_type == "trial":
+            if trial_end_date:
+                today = datetime.utcnow().date()
+                trial_end = datetime.strptime(trial_end_date, "%Y-%m-%d").date()
+                if today > trial_end:
+                    return jsonify({"error": "Your free trial has expired. Please upgrade to continue."}), 403
         if user_credits <= 0:
-            return jsonify({"error": "You’ve used all your credits. Please contact support to request more."}), 403
+            return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
         data = request.get_json()
         print("🟡 Received data:", json.dumps(data, indent=2))
 
@@ -144,9 +196,17 @@ def generate_subject_route():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        user_credits = get_user_credits(user_id)
+        initialize_trial_if_needed(user_id)
+        plan_type, user_credits, trial_end_date = get_user_trial_status(user_id)
+        if plan_type == "trial":
+            if trial_end_date:
+                today = datetime.utcnow().date()
+                trial_end = datetime.strptime(trial_end_date, "%Y-%m-%d").date()
+                if today > trial_end:
+                    return jsonify({"error": "Your free trial has expired. Please upgrade to continue."}), 403
+
         if user_credits <= 0:
-            return jsonify({"error": "You’ve used all your credits. Please contact support to request more."}), 403
+            return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
 
         data = request.get_json()
         user_info = data.get("user_info", {})
@@ -173,9 +233,17 @@ def generate_simple_email_api():
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
 
-        user_credits = get_user_credits(user_id)
+        initialize_trial_if_needed(user_id)
+        plan_type, user_credits, trial_end_date = get_user_trial_status(user_id)
+        if plan_type == "trial":
+            if trial_end_date:
+                today = datetime.utcnow().date()
+                trial_end = datetime.strptime(trial_end_date, "%Y-%m-%d").date()
+                if today > trial_end:
+                    return jsonify({"error": "Your free trial has expired. Please upgrade to continue."}), 403
+
         if user_credits <= 0:
-            return jsonify({"error": "You’ve used all your credits. Please contact support to request more."}), 403
+            return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
 
         data = request.get_json()
         print("📩 Simple Email Request:", json.dumps(data, indent=2))
@@ -203,8 +271,10 @@ def get_credits():
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    credits = get_user_credits(user_id)
-    return jsonify({"credits": credits}), 200
+    initialize_trial_if_needed(user_id)
+    plan_type, credits, trial_end_date = get_user_trial_status(user_id)
+    # Optionally, return trial status and end date
+    return jsonify({"credits": credits, "plan_type": plan_type, "trial_end_date": trial_end_date}), 200
 
 @app.route('/api/user-settings', methods=['GET'])
 def get_user_settings():
@@ -245,6 +315,113 @@ def update_user_settings():
     if response.ok:
         return jsonify({"success": True}), 200
     return jsonify({"error": "Failed to save settings"}), 500
+
+@app.route('/api/create-checkout-session', methods=['OPTIONS'])
+def checkout_options():
+    response = app.make_default_options_response()
+    headers = response.headers
+    headers['Access-Control-Allow-Origin'] = '*'
+    headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
+@app.route('/api/create-checkout-session', methods=['POST'])
+def create_checkout():
+    try:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        data = request.get_json()
+        plan = data.get("plan")  # 'basic' or 'advanced'
+        success_url = data.get("success_url")
+        cancel_url = data.get("cancel_url")
+        # Fetch user email and stripe_customer_id from Supabase
+        url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=email,stripe_customer_id"
+        headers = {
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+        }
+        response = requests.get(url, headers=headers)
+        if not response.ok or not response.json():
+            return jsonify({"error": "User not found"}), 404
+        user = response.json()[0]
+        email = user.get("email")
+        stripe_customer_id = user.get("stripe_customer_id")
+        # If no Stripe customer, create one and update Supabase
+        if not stripe_customer_id:
+            from stripe_utils import create_stripe_customer
+            stripe_customer_id = create_stripe_customer(email, user_id)
+            patch_url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}"
+            patch_headers = headers.copy()
+            patch_headers["Content-Type"] = "application/json"
+            requests.patch(patch_url, headers=patch_headers, json={"stripe_customer_id": stripe_customer_id})
+        # Create checkout session
+        session_url = create_checkout_session(stripe_customer_id, plan, success_url, cancel_url)
+        return jsonify({"url": session_url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get('stripe-signature')
+    event = None
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except Exception as e:
+        return jsonify({'error': f'Webhook error: {str(e)}'}), 400
+    # Handle subscription events
+    if event['type'] == 'customer.subscription.created' or event['type'] == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        stripe_customer_id = subscription['customer']
+        status = subscription['status']
+        # Find user by stripe_customer_id and update plan_type, subscription_status, credits
+        # (You may want to check which plan by looking at subscription['items']['data'][0]['price']['id'])
+        url = f"{SUPABASE_URL}/rest/v1/user_profiles?stripe_customer_id=eq.{stripe_customer_id}"
+        headers = {
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "Content-Type": "application/json"
+        }
+        # Determine plan and credits
+        plan_type = None
+        credits = None
+        price_id = subscription['items']['data'][0]['price']['id']
+        if price_id == os.getenv("STRIPE_BASIC_PRICE_ID"):
+            plan_type = 'basic'
+            credits = 150
+        elif price_id == os.getenv("STRIPE_ADVANCED_PRICE_ID"):
+            plan_type = 'advanced'
+            credits = 1000
+        else:
+            plan_type = 'unknown'
+            credits = 0
+        patch = {
+            "plan_type": plan_type,
+            "subscription_status": status,
+            "credits": credits,
+            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end'])
+        }
+        requests.patch(url, headers=headers, json=patch)
+    elif event['type'] == 'customer.subscription.deleted':
+        subscription = event['data']['object']
+        stripe_customer_id = subscription['customer']
+        url = f"{SUPABASE_URL}/rest/v1/user_profiles?stripe_customer_id=eq.{stripe_customer_id}"
+        headers = {
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "Content-Type": "application/json"
+        }
+        patch = {
+            "plan_type": 'trial',
+            "subscription_status": 'canceled'
+        }
+        requests.patch(url, headers=headers, json=patch)
+    return '', 200
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
