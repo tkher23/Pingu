@@ -18,7 +18,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 def get_user_credits(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=credits"
@@ -315,16 +315,6 @@ def update_user_settings():
     if response.ok:
         return jsonify({"success": True}), 200
     return jsonify({"error": "Failed to save settings"}), 500
-
-@app.route('/api/create-checkout-session', methods=['OPTIONS'])
-def checkout_options():
-    response = app.make_default_options_response()
-    headers = response.headers
-    headers['Access-Control-Allow-Origin'] = '*'
-    headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    headers['Access-Control-Allow-Credentials'] = 'true'
-    return response
 
 @app.route('/api/create-checkout-session', methods=['POST'])
 def create_checkout():
