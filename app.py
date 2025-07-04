@@ -385,7 +385,7 @@ def stripe_webhook():
         plan_type = None
         credits = None
         price_id = subscription['items']['data'][0]['price']['id']
-        if price_id == os.getenv("STRIPE_BASIC_TEST_PRICE_ID"):
+        if price_id == os.getenv("STRIPE_BASIC_PRICE_ID"):
             plan_type = 'basic'
             credits = 150
         elif price_id == os.getenv("STRIPE_ADVANCED_PRICE_ID"):
