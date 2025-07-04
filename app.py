@@ -66,7 +66,7 @@ def get_user_trial_status(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}
     }
     response = requests.get(url, headers=headers)
     if response.ok and response.json():
@@ -153,19 +153,43 @@ def process_single_profile():
             return jsonify({"error": "Unauthorized"}), 401
         # 🟢 Initialize trial if needed
         initialize_trial_if_needed(user_id)
-        # 🚫 Check if user has credits and trial status
-        plan_type, user_credits, trial_end_date = get_user_trial_status(user_id)
+        # 🚫 Check if user has credits and trial/subscription status
+        # Fetch all relevant fields
+        url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date,subscription_updated_at"
+        headers = {
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+        }
+        response = requests.get(url, headers=headers)
+        if not response.ok or not response.json():
+            return jsonify({"error": "User profile not found"}), 404
+        user = response.json()[0]
+        plan_type = user.get("plan_type", "trial")
+        user_credits = user.get("credits", 0)
+        trial_end_date = user.get("trial_end_date")
+        subscription_updated_at = user.get("subscription_updated_at")
+        today = datetime.utcnow()
+        # Access control logic
         if plan_type == "trial":
             if trial_end_date:
-                today = datetime.utcnow().date()
                 trial_end = datetime.strptime(trial_end_date, "%Y-%m-%d").date()
-                if today > trial_end:
+                if today.date() > trial_end:
                     return jsonify({"error": "Your free trial has expired. Please upgrade to continue."}), 403
+        elif plan_type in ("basic", "advanced"):
+            if subscription_updated_at:
+                # Try parsing as ISO format, fallback to date only
+                try:
+                    sub_end = datetime.fromisoformat(subscription_updated_at)
+                except Exception:
+                    sub_end = datetime.strptime(subscription_updated_at, "%Y-%m-%d").date()
+                    if today.date() > sub_end:
+                        return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
+                if today > sub_end:
+                    return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
         if user_credits <= 0:
             return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
         data = request.get_json()
         print("🟡 Received data:", json.dumps(data, indent=2))
-
         profile = {
             "linkedin": {"raw_text": data.get("linkedin", "")},
             "bio_page": {"raw_text": data.get("bio_page", "")},
@@ -176,14 +200,10 @@ def process_single_profile():
             "company_of_interest": data.get("user_info", {}).get("company_interest", ""),
             "role_type": data.get("user_info", {}).get("role_type", "internship")
         }
-
         processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False)
-
         # ✅ Subtract credit after successful processing
         decrement_user_credits(user_id)
-
         return jsonify(processed[0]), 200
-
     except Exception as e:
         print("❌ ERROR:", e)
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
@@ -398,7 +418,8 @@ def stripe_webhook():
             "plan_type": plan_type,
             "subscription_status": status,
             "credits": credits,
-            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end'])
+            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end']),
+            "trial_end_date": None  # Clear trial_end_date on upgrade
         }
         requests.patch(url, headers=headers, json=patch)
     elif event['type'] == 'customer.subscription.deleted':
