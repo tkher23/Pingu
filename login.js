@@ -56,6 +56,24 @@ window.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // PATCH: Set up free trial fields on signup/login
+  try {
+    const userId = session.user.id;
+    const today = new Date();
+    const trialEnd = new Date(today);
+    trialEnd.setDate(today.getDate() + 7);
+    await supabase
+      .from('user_profiles')
+      .update({
+        plan_type: 'trial',
+        credits: 50,
+        trial_end_date: trialEnd.toISOString().slice(0, 10) // YYYY-MM-DD
+      })
+      .eq('id', userId);
+  } catch (err) {
+    console.error('Failed to patch user profile with trial fields:', err);
+  }
+
   try {
     chrome.runtime.sendMessage(EXTENSION_ID, {
       type: "authSuccess",
