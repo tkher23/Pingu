@@ -59,7 +59,7 @@ const Settings = () => {
         styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
         classNames={{ input: 'custom-input' }}
       />
-      <TextInput label="Default Career/Internship Interest" value={form.default_interest || ''} onChange={handleChange('default_interest')} mb="sm"
+      <TextInput label="Default Career Interest" value={form.default_interest || ''} onChange={handleChange('default_interest')} mb="sm"
         styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
         classNames={{ input: 'custom-input' }}
       />

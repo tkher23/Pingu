@@ -16,7 +16,24 @@ const Login = ({ onLogin }) => {
         <Text size="lg" align="center" style={{ fontWeight: 600, marginBottom: 8, marginTop: 8 }}>
           Welcome aboard, Pingu reporting for email duty!
         </Text>
-        <Button onClick={startLogin} loading={loading} size="md" style={{ width: 220 }}>
+        <Button 
+          onClick={startLogin} 
+          loading={loading} 
+          size="md" 
+          style={{ 
+            width: 220, 
+            background: '#e6f3ff', 
+            color: '#000a14', 
+            border: '1px solid #000a14', 
+            fontWeight: 600, 
+            fontSize: 14, 
+            transition: 'background 0.15s, color 0.15s, border 0.15s',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderRadius: 8
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#5fafde'}
+          onMouseLeave={e => e.currentTarget.style.background = '#e6f3ff'}
+        >
           Login with Google
         </Button>
         {error && <Notification color="red">{error.message}</Notification>}

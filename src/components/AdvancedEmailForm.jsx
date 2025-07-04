@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, TextInput, Group, Textarea, CopyButton, Notification, Stack } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
-import useCredits from '../hooks/useCredits';
 import useGmailSender from '../hooks/useGmailSender';
 import useLogin from '../hooks/useLogin';
 
@@ -19,10 +18,9 @@ const blueButtonHover = {
   border: 'none',
 };
 
-const AdvancedEmailForm = () => {
+const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }) => {
   // Profile and credits
   const { profile, getProfile, loading: profileLoading, error: profileError } = useProfile();
-  const { credits, fetchCredits, loading: creditsLoading, error: creditsError } = useCredits();
   const sendGmail = useGmailSender();
   const { logout } = useLogin();
 
@@ -72,12 +70,7 @@ const AdvancedEmailForm = () => {
   useEffect(() => { localStorage.setItem('ae_subject', subject); }, [subject]);
   useEffect(() => { localStorage.setItem('ae_body', body); }, [body]);
 
-  // Load profile and credits on mount
-  useEffect(() => {
-    getProfile();
-    fetchCredits();
-  }, [getProfile, fetchCredits]);
-
+  // Load profile on mount
   useEffect(() => {
     getProfile();
   }, [getProfile]);
@@ -105,17 +98,13 @@ const AdvancedEmailForm = () => {
       );
       const data = await res.json();
       setSubject(data.subject || 'No subject generated.');
-      fetchCredits(); // Update credits immediately
     } catch (err) {
       setSubject('Error generating subject.');
-    } finally {
-      setGenerating(false);
     }
   };
 
   // Generate email body
   const handleGenerateEmail = async () => {
-    setGenerating(true);
     setBody('Crafting email…');
     try {
       const { supabaseToken } = await chrome.storage.local.get('supabaseToken');
@@ -147,12 +136,18 @@ const AdvancedEmailForm = () => {
       );
       const data = await res.json();
       setBody(data.generated_email || 'No email generated.');
-      fetchCredits(); // Update credits immediately
     } catch (err) {
       setBody('Error generating email.');
-    } finally {
-      setGenerating(false);
     }
+  };
+
+  // New handler for Generate button
+  const handleGenerateAll = async () => {
+    setGenerating(true);
+    await handleGenerateSubject();
+    await handleGenerateEmail();
+    if (fetchCredits) fetchCredits();
+    setGenerating(false);
   };
 
   // Send email via Gmail
@@ -205,7 +200,7 @@ const AdvancedEmailForm = () => {
         classNames={{ input: 'custom-input' }}
         mb={8}
       />
-      <TextInput label="LinkedIn URL" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
+      <TextInput label="LinkedIn Information" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
         styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
         classNames={{ input: 'custom-input' }}
         mb={8}
@@ -215,12 +210,12 @@ const AdvancedEmailForm = () => {
         classNames={{ input: 'custom-input' }}
         mb={8}
       />
-      <TextInput label="Values Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
+      <TextInput label="Company Description Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
         styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
         classNames={{ input: 'custom-input' }}
         mb={8}
       />
-      <TextInput label="Internship Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
+      <TextInput label="Career Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
         styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
         classNames={{ input: 'custom-input' }}
         mb={8}
@@ -228,7 +223,7 @@ const AdvancedEmailForm = () => {
       <Stack spacing="xl">
         <Group spacing="md" grow align="flex-end">
           <Button
-            onClick={async () => { await handleGenerateSubject(); await handleGenerateEmail(); }}
+            onClick={handleGenerateAll}
             loading={generating}
             radius="md"
             style={{ ...blueButtonStyle, ...(hoveredGenerateEmail ? blueButtonHover : {}) }}

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Group, TextInput, Textarea, Stack, CopyButton, Notification } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useGmailSender from '../hooks/useGmailSender';
-import useCredits from '../hooks/useCredits';
 
 const blueButtonStyle = {
   background: '#e6f3ff',
@@ -18,10 +17,9 @@ const blueButtonHover = {
   border: 'none',
 };
 
-const SimpleEmailForm = () => {
+const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }) => {
   const { profile, getProfile, error: profileError } = useProfile();
   const sendGmail = useGmailSender();
-  const { fetchCredits } = useCredits();
 
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
@@ -107,7 +105,7 @@ const SimpleEmailForm = () => {
       );
       const subjectData = await subjectRes.json();
       setSubject(subjectData.subject || 'No subject generated.');
-      fetchCredits(); // Update credits immediately
+      if (fetchCredits) fetchCredits(); // Use prop
     } catch (err) {
       setBody('Error generating email.');
       setSubject('Error generating subject.');
@@ -144,9 +142,10 @@ const SimpleEmailForm = () => {
   return (
     <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
       <Stack spacing="xl">
-        {(profileError) && (
+        {(profileError || creditsError) && (
           <Notification color="red" title="Error" mb="md">
             {profileError && <div>Profile: {profileError.toString()}</div>}
+            {creditsError && <div>Credits: {creditsError.toString()}</div>}
           </Notification>
         )}
         <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
@@ -159,7 +158,7 @@ const SimpleEmailForm = () => {
           classNames={{ input: 'custom-input' }}
           mb={8}
         />
-        <TextInput label="Internship Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
+        <TextInput label="Career Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
           mb={8}
