@@ -9,6 +9,7 @@ from stripe_utils import create_checkout_session
 import stripe
 from datetime import datetime, timedelta
 import logging
+import sys
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -18,16 +19,19 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
+# --- Logging setup for Render (stdout, global) ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='[WEBHOOK] %(asctime)s %(levelname)s %(message)s',
+    stream=sys.stdout
+)
+# --- End logging setup ---
+
+def log_to_file(msg):
+    logging.info(msg)
+
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-
-# Set up file-based logging for webhook debugging
-webhook_logger = logging.getLogger('webhook_debug')
-webhook_logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler('webhook_debug.log')
-file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
-if not webhook_logger.hasHandlers():
-    webhook_logger.addHandler(file_handler)
 
 def get_user_credits(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=credits"
@@ -391,15 +395,6 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('stripe-signature')
     event = None
-    # --- File-based logging setup ---
-    def log_to_file(msg):
-        try:
-            with open("webhook_debug.log", "a") as f:
-                f.write(f"[{datetime.utcnow().isoformat()}] {msg}\n")
-        except Exception as e:
-            # Fallback: ignore file write errors
-            pass
-    # --- End file-based logging setup ---
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
