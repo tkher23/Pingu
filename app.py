@@ -66,7 +66,7 @@ def get_user_trial_status(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
     }
     response = requests.get(url, headers=headers)
     if response.ok and response.json():
