@@ -8,6 +8,7 @@ import requests
 from stripe_utils import create_checkout_session
 import stripe
 from datetime import datetime, timedelta
+import logging
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -19,6 +20,14 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
+# Set up file-based logging for webhook debugging
+webhook_logger = logging.getLogger('webhook_debug')
+webhook_logger.setLevel(logging.INFO)
+file_handler = logging.FileHandler('webhook_debug.log')
+file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+if not webhook_logger.hasHandlers():
+    webhook_logger.addHandler(file_handler)
 
 def get_user_credits(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=credits"
@@ -382,29 +391,41 @@ def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('stripe-signature')
     event = None
+    # --- File-based logging setup ---
+    def log_to_file(msg):
+        try:
+            with open("webhook_debug.log", "a") as f:
+                f.write(f"[{datetime.utcnow().isoformat()}] {msg}\n")
+        except Exception as e:
+            # Fallback: ignore file write errors
+            pass
+    # --- End file-based logging setup ---
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
     except Exception as e:
+        log_to_file(f"❌ Webhook signature error: {e}")
         return jsonify({'error': f'Webhook error: {str(e)}'}), 400
+    log_to_file(f"✅ Stripe webhook received: {event.get('type')}")
     # Handle subscription events
     if event['type'] == 'customer.subscription.created' or event['type'] == 'customer.subscription.updated':
         subscription = event['data']['object']
         stripe_customer_id = subscription['customer']
         status = subscription['status']
-        # Find user by stripe_customer_id and update plan_type, subscription_status, credits
-        # (You may want to check which plan by looking at subscription['items']['data'][0]['price']['id'])
+        price_id = subscription['items']['data'][0]['price']['id']
+        log_to_file(f"Stripe customer: {stripe_customer_id}, status: {status}, price_id: {price_id}")
+        log_to_file(f"ENV STRIPE_BASIC_PRICE_ID: {os.getenv('STRIPE_BASIC_PRICE_ID')}")
+        log_to_file(f"ENV STRIPE_ADVANCED_PRICE_ID: {os.getenv('STRIPE_ADVANCED_PRICE_ID')}")
         url = f"{SUPABASE_URL}/rest/v1/user_profiles?stripe_customer_id=eq.{stripe_customer_id}"
+        log_to_file(f"PATCH URL: {url}")
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
             "Content-Type": "application/json"
         }
-        # Determine plan and credits
         plan_type = None
         credits = None
-        price_id = subscription['items']['data'][0]['price']['id']
         if price_id == os.getenv("STRIPE_BASIC_PRICE_ID"):
             plan_type = 'basic'
             credits = 150
@@ -419,9 +440,14 @@ def stripe_webhook():
             "subscription_status": status,
             "credits": credits,
             "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end']),
-            "trial_end_date": None  # Clear trial_end_date on upgrade
+            "trial_end_date": None
         }
-        requests.patch(url, headers=headers, json=patch)
+        log_to_file(f"PATCH DATA: {json.dumps(patch, default=str)}")
+        try:
+            resp = requests.patch(url, headers=headers, json=patch)
+            log_to_file(f"PATCH response: {resp.status_code} {resp.text}")
+        except Exception as e:
+            log_to_file(f"❌ PATCH request error: {e}")
     elif event['type'] == 'customer.subscription.deleted':
         subscription = event['data']['object']
         stripe_customer_id = subscription['customer']
@@ -435,7 +461,12 @@ def stripe_webhook():
             "plan_type": 'trial',
             "subscription_status": 'canceled'
         }
-        requests.patch(url, headers=headers, json=patch)
+        log_to_file(f"PATCH DATA (deleted): {json.dumps(patch, default=str)}")
+        try:
+            resp = requests.patch(url, headers=headers, json=patch)
+            log_to_file(f"PATCH response (deleted): {resp.status_code} {resp.text}")
+        except Exception as e:
+            log_to_file(f"❌ PATCH request error (deleted): {e}")
     return '', 200
 
 @app.route('/api/user-profile', methods=['GET'])
