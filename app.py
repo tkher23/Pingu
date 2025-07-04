@@ -413,11 +413,13 @@ def stripe_webhook():
         log_to_file(f"ENV STRIPE_BASIC_PRICE_ID: {os.getenv('STRIPE_BASIC_PRICE_ID')}")
         log_to_file(f"ENV STRIPE_ADVANCED_PRICE_ID: {os.getenv('STRIPE_ADVANCED_PRICE_ID')}")
         log_to_file(f"Stripe subscription object: {json.dumps(subscription, default=str)}")
-        log_to_file(f"Stripe current_period_end: {subscription.get('current_period_end')}")
-        # Convert current_period_end to ISO string if present
+        # Try top-level first, then fallback to the first item
         current_period_end = subscription.get('current_period_end')
+        if not current_period_end and subscription.get('items', {}).get('data'):
+            current_period_end = subscription['items']['data'][0].get('current_period_end')
+        log_to_file(f"Stripe current_period_end: {current_period_end}")
+        # Convert current_period_end to ISO string if present
         if current_period_end:
-            # Stripe returns this as a Unix timestamp (int)
             dt = datetime.utcfromtimestamp(current_period_end)
             subscription_updated_at = dt.isoformat() + 'Z'  # Add Z for UTC
         else:
