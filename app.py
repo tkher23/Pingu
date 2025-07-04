@@ -82,7 +82,7 @@ def initialize_trial_if_needed(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,trial_end_date,credits"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
     }
     response = requests.get(url, headers=headers)
     if response.ok and response.json():
