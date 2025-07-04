@@ -82,7 +82,7 @@ def initialize_trial_if_needed(user_id):
     url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,trial_end_date,credits"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}
     }
     response = requests.get(url, headers=headers)
     if response.ok and response.json():
@@ -416,6 +416,22 @@ def stripe_webhook():
         }
         requests.patch(url, headers=headers, json=patch)
     return '', 200
+
+@app.route('/api/user-profile', methods=['GET'])
+def get_user_profile():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    user_id = get_user_id_from_token(token)
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,trial_end_date,subscription_updated_at,credits"
+    headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
+    }
+    response = requests.get(url, headers=headers)
+    if response.ok and response.json():
+        return jsonify(response.json()[0]), 200
+    return jsonify({}), 200
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
