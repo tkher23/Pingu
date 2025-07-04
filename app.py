@@ -412,6 +412,16 @@ def stripe_webhook():
         log_to_file(f"Stripe customer: {stripe_customer_id}, status: {status}, price_id: {price_id}")
         log_to_file(f"ENV STRIPE_BASIC_PRICE_ID: {os.getenv('STRIPE_BASIC_PRICE_ID')}")
         log_to_file(f"ENV STRIPE_ADVANCED_PRICE_ID: {os.getenv('STRIPE_ADVANCED_PRICE_ID')}")
+        log_to_file(f"Stripe subscription object: {json.dumps(subscription, default=str)}")
+        log_to_file(f"Stripe current_period_end: {subscription.get('current_period_end')}")
+        # Convert current_period_end to ISO string if present
+        current_period_end = subscription.get('current_period_end')
+        if current_period_end:
+            # Stripe returns this as a Unix timestamp (int)
+            dt = datetime.utcfromtimestamp(current_period_end)
+            subscription_updated_at = dt.isoformat() + 'Z'  # Add Z for UTC
+        else:
+            subscription_updated_at = None
         url = f"{SUPABASE_URL}/rest/v1/user_profiles?stripe_customer_id=eq.{stripe_customer_id}"
         log_to_file(f"PATCH URL: {url}")
         headers = {
@@ -434,9 +444,7 @@ def stripe_webhook():
             "plan_type": plan_type,
             "subscription_status": status,
             "credits": credits,
-            # Serialize as ISO string for timestamp column
-            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end']).isoformat() if subscription.get('current_period_end') else None,
-            # Set to None for date column (null in Supabase)
+            "subscription_updated_at": subscription_updated_at,
             "trial_end_date": None
         }
         log_to_file(f"PATCH DATA: {json.dumps(patch, default=str)}")
