@@ -168,7 +168,7 @@ def process_single_profile():
         initialize_trial_if_needed(user_id)
         # 🚫 Check if user has credits and trial/subscription status
         # Fetch all relevant fields
-        url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date,subscription_updated_at"
+        url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date,subscription_updated_at,subscription_status"
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
@@ -181,6 +181,7 @@ def process_single_profile():
         user_credits = user.get("credits", 0)
         trial_end_date = user.get("trial_end_date")
         subscription_updated_at = user.get("subscription_updated_at")
+        subscription_status = user.get("subscription_status")
         today = datetime.utcnow()
         # Access control logic
         if plan_type == "trial":
@@ -189,16 +190,15 @@ def process_single_profile():
                 if today.date() > trial_end:
                     return jsonify({"error": "Your free trial has expired. Please upgrade to continue."}), 403
         elif plan_type in ("basic", "advanced"):
-            if subscription_updated_at:
-                # Try parsing as ISO format, fallback to date only
-                try:
-                    sub_end = datetime.fromisoformat(subscription_updated_at)
-                except Exception:
-                    sub_end = datetime.strptime(subscription_updated_at, "%Y-%m-%d").date()
-                    if today.date() > sub_end:
-                        return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
-                if today > sub_end:
-                    return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
+            # Block if subscription is not active or expired
+            if not subscription_updated_at or not subscription_status or subscription_status != "active":
+                return jsonify({"error": "Your subscription is not active. Please renew to continue."}), 403
+            try:
+                sub_end = datetime.fromisoformat(subscription_updated_at)
+            except Exception:
+                sub_end = datetime.strptime(subscription_updated_at, "%Y-%m-%d").date()
+            if today > sub_end:
+                return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
         if user_credits <= 0:
             return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
         data = request.get_json()
