@@ -469,6 +469,13 @@ def stripe_webhook():
             log_to_file(f"PATCH response (deleted): {resp.status_code} {resp.text}")
         except Exception as e:
             log_to_file(f"❌ PATCH request error (deleted): {e}")
+    elif event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        stripe_customer_id = session.get('customer')
+        subscription_id = session.get('subscription')
+        log_to_file(f"Handled checkout.session.completed for customer {stripe_customer_id}, subscription {subscription_id}")
+        # Optionally, add logic here to update Supabase if needed
+        return '', 200
     return '', 200
 
 @app.route('/api/user-profile', methods=['GET'])
