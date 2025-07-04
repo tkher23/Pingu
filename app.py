@@ -439,7 +439,9 @@ def stripe_webhook():
             "plan_type": plan_type,
             "subscription_status": status,
             "credits": credits,
-            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end']),
+            # Serialize as ISO string for timestamp column
+            "subscription_updated_at": stripe.util.convert_to_datetime(subscription['current_period_end']).isoformat() if subscription.get('current_period_end') else None,
+            # Set to None for date column (null in Supabase)
             "trial_end_date": None
         }
         log_to_file(f"PATCH DATA: {json.dumps(patch, default=str)}")
