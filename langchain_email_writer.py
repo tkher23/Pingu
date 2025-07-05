@@ -38,7 +38,7 @@ Write a short cold email (max 125 words) from the perspective of {user_name}. Th
 
 - Start with "Dear {recipient_name}"
 - Briefly introduce who you are
-- Genuinely admire one or two specific things about the company or {recipient_name}
+- Genuinely admire one or two specific things about the {recipient_name}'s personal context
 - Clearly ask about a potential {role_type} opportunity
 - End by asking for a short (15-minute) chat or career advice
 - Be informal, warm, and human — but concise
