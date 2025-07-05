@@ -205,7 +205,7 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
         overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
       >
         <Text size="md" mb="md">
-          Here you can provide detailed information like LinkedIn, company values, and a bio page to generate even more personalized emails. The more info you provide, the better the AI can tailor your message!
+          Here you can provide detailed information like LinkedIn, company values, and a bio page to generate even more personalized emails. The more info you provide, the better Pingu can tailor your message!
         </Text>
         <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
       </Modal>
@@ -277,7 +277,9 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
             )}
           </CopyButton>
           <Textarea label="Email Body" value={body} onChange={e => setBody(e.target.value)} minRows={4} radius="md" size="sm"
-            styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+            autosize
+            maxRows={20}
+            styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none', overflowY: 'auto' }, label: { color: '#000a14', fontWeight: 500 } }}
             classNames={{ input: 'custom-input' }}
           />
           <CopyButton value={body} timeout={1500}>

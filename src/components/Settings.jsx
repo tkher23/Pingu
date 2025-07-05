@@ -66,7 +66,7 @@ const Settings = () => {
         overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
       >
         <Text size="md" mb="md">
-          Add your background, interests, and personal context here. Our AI will remember your details and use them to craft emails that reflect who you are as a person.
+          Add your background, interests, and personal context here. Pingu will learn you and craft emails that reflect your career interests and background.
         </Text>
         <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
       </Modal>

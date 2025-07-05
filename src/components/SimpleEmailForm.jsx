@@ -192,8 +192,16 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
             </Button>
           )}
         </CopyButton>
-        <Textarea label="Email Body" value={body} onChange={e => setBody(e.target.value)} minRows={4} radius="md" size="sm"
-          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+        <Textarea
+          label="Email Body"
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          minRows={4}
+          autosize
+          maxRows={20}
+          radius="md"
+          size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none', overflowY: 'auto' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />
         <CopyButton value={body} timeout={1500}>
