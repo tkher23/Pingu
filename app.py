@@ -63,14 +63,14 @@ def get_user_id_from_token(token):
         print("Token verification error:", e)
         return None
 
-def decrement_user_credits(user_id):
+def decrement_user_credits(user_id, amount=1):
     url = f"{SUPABASE_URL}/rest/v1/rpc/decrement_credits"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
         "Content-Type": "application/json"
     }
-    payload = {"user_id": user_id}
+    payload = {"user_id": user_id, "amount": amount}
     response = requests.post(url, headers=headers, json=payload)
     if not response.ok:
         print("⚠️ Failed to decrement credits:", response.text)
@@ -199,8 +199,8 @@ def process_single_profile():
                 sub_end = datetime.strptime(subscription_updated_at, "%Y-%m-%d").date()
             if today > sub_end:
                 return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
-        if user_credits <= 0:
-            return jsonify({"error": "You’ve used all your credits. Please contact support or upgrade to request more."}), 403
+        if user_credits < 2:
+            return jsonify({"error": "You need at least 2 credits to generate an advanced email. Please upgrade or contact support."}), 403
         data = request.get_json()
         print("🟡 Received data:", json.dumps(data, indent=2))
         profile = {
@@ -214,8 +214,7 @@ def process_single_profile():
             "role_type": data.get("user_info", {}).get("role_type", "internship")
         }
         processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False)
-        # ✅ Subtract credit after successful processing
-        decrement_user_credits(user_id)
+        decrement_user_credits(user_id, amount=2)  # Use 2 credits for advanced email
         return jsonify(processed[0]), 200
     except Exception as e:
         print("❌ ERROR:", e)
@@ -313,7 +312,7 @@ def generate_simple_email_api():
 
         processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
 
-        decrement_user_credits(user_id)
+        decrement_user_credits(user_id, amount=1)  # Use 1 credit for simple email
         return jsonify(processed[0]), 200
 
     except Exception as e:
