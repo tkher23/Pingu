@@ -14,11 +14,11 @@ llm = ChatOpenAI(
 )
 
 email_prompt_template = PromptTemplate(
-    input_variables=["user_name", "user_intro", "persona_context", "internship_interest", "recipient_name", "headline", "bio", "experiences", "education", "bio_page", "company_values"],
+    input_variables=["user_name", "user_intro", "persona_context", "internship_interest", "recipient_name", "headline", "bio", "experiences", "education", "bio_page", "company_values", "role_type", "company_of_interest"],
     template="""  
-You are {user_name}, {user_intro}, and you are very interested in a {role_type} opportunity in {internship_interest} at {company_of_interest}.
+You are {user_name}, {user_intro}, and you're currently looking for a {role_type} opportunity in {internship_interest} at {company_of_interest}.
 
-You want to send a personalized cold email to {recipient_name}, who has the following background:
+You want to send a short, friendly cold email to {recipient_name}, who has the following background:
 
 - Headline: {headline}
 - Bio: {bio}
@@ -28,25 +28,24 @@ You want to send a personalized cold email to {recipient_name}, who has the foll
 Their company values include:
 {company_values}
 
-You have also read their bio page:
+You’ve also read their bio page:
 {bio_page}
 
-Here is some personal context about you: "{persona_context}".
-Use this to explain why you are personally drawn to this company and this person — connect your values and goals to their experience and what the company stands for.
+Here is some personal context about you: "{persona_context}". Use **only one or two** quick, relevant connections to show why you're genuinely interested in both the company and {recipient_name}'s experience.
 
 === TASK ===
-Write an email from the perspective of {user_name}. Introduce yourself briefly, say what you admire about the company and about {recipient_name}'s experience, and clearly request a {role_type} opportunity and a 15-minute meeting to ask for career advice.
+Write a short cold email (max 125 words) from the perspective of {user_name}. The email should:
 
-This email should be:
-- Informal in tone
-- Around 200 words
 - Start with "Dear {recipient_name}"
-- Admiring and personal
-- Do NOT say where you found the info or "I came across you through..."
+- Briefly introduce who you are
+- Genuinely admire one or two specific things about the company or {recipient_name}
+- Clearly ask about a potential {role_type} opportunity
+- End by asking for a short (15-minute) chat or career advice
+- Be informal, warm, and human — but concise
+- Do **not** mention where you found their profile or say "I came across you through..."
 
 Write the email below:
 """
-
 )
 
 def generate_email(profile):
