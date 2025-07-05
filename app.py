@@ -341,7 +341,7 @@ def get_user_settings():
     url = f"{SUPABASE_URL}/rest/v1/user_settings?id=eq.{user_id}"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"  # Use service role for RLS bypass
     }
     response = requests.get(url, headers=headers)
     if response.ok:
@@ -362,14 +362,15 @@ def update_user_settings():
     url = f"{SUPABASE_URL}/rest/v1/user_settings"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",  # Use service role for RLS bypass
         "Content-Type": "application/json",
         "Prefer": "resolution=merge-duplicates"
     }
     response = requests.post(url, headers=headers, json=[payload])
     if response.ok:
         return jsonify({"success": True}), 200
-    return jsonify({"error": "Failed to save settings"}), 500
+    print("❌ Failed to save user settings:", response.status_code, response.text)
+    return jsonify({"error": f"Failed to save settings: {response.text}"}), 500
 
 @app.route('/api/create-checkout-session', methods=['POST'])
 def create_checkout():
