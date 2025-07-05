@@ -89,6 +89,9 @@ const Settings = () => {
           classNames={{ input: 'custom-input' }}
         />
         <Textarea label="Personal Context" value={form.persona_context || ''} onChange={handleChange('persona_context')} mb="sm"
+          autosize
+          minRows={3}
+          maxRows={12}
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />

@@ -34,7 +34,9 @@ export default function MainUI() {
   const { userProfile, fetchUserProfile, loading: userProfileLoading, error: userProfileError } = useUserProfile();
   const { plan_type, trial_end_date, subscription_updated_at } = userProfile || {};
   const [loadingPlan, setLoadingPlan] = useState(null); // 'basic' | 'advanced' | null
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !localStorage.getItem('hasSeenWelcomePopup');
+  });
 
   useEffect(() => {
     fetchCredits();
@@ -63,9 +65,10 @@ export default function MainUI() {
   }, [fetchUserProfile, fetchCredits]);
 
   useEffect(() => {
-    // Show welcome popup after login (first mount)
-    setShowWelcome(true);
-  }, []);
+    if (showWelcome) {
+      localStorage.setItem('hasSeenWelcomePopup', 'true');
+    }
+  }, [showWelcome]);
 
   // Helper: trial days left
   let trialDaysLeft = null;
