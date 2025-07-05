@@ -226,17 +226,20 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
           classNames={{ input: 'custom-input' }}
           mb={8}
         />
-        <TextInput label="LinkedIn Information" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
+        <Textarea label="LinkedIn Information" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
           mb={8}
         />
-        <TextInput label="Bio Page" value={bio} onChange={e => setBio(e.target.value)} radius="md" size="sm"
+        <Textarea label="Bio Page" value={bio} onChange={e => setBio(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
           mb={8}
         />
-        <TextInput label="Company Description Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
+        <Textarea label="Company Description Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
           mb={8}
