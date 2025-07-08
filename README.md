@@ -15,3 +15,26 @@ Pingu is your AI-powered personal assistant for writing thoughtful, effective co
 Whether you’re reaching out for internships, networking or full-time, Pingu saves time while championing personalization.
 
 Try it free with limited credits. Upgrade plans available.
+
+---
+
+## Screenshots
+
+### Extension Main UI
+![Main UI](extension-look.png)
+
+### Profile Settings
+![Profile Settings](profile.png)
+
+### Subscription/Upgrade Panel
+![Subscription Panel](subscriptions.png)
+
+### Loading State
+![Loading](loading.png)
+
+### Example Generated Email
+![Generated Email](email.png)
+
+---
+
+For more details, see the [privacy policy](https://tkher23.github.io/pingu-privacy/)(#).
