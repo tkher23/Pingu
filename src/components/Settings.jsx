@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, TextInput, Textarea, Select, Button, Group, Notification, Modal } from '@mantine/core';
+import { Text, TextInput, Textarea, Button, Group, Notification, Modal } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 
 const blueButtonStyle = {
@@ -45,11 +45,7 @@ const Settings = () => {
   const handleChange = (field) => (e) => {
     setForm({ ...form, [field]: e.target.value });
   };
-
-  const handleSelect = (value) => {
-    setForm({ ...form, role_type: value });
-  };
-
+  
   const handleSave = () => {
     saveProfile(form);
     setSavedMsg('Saved!');
@@ -77,18 +73,22 @@ const Settings = () => {
           </Notification>
         )}
         <TextInput label="Your Name" value={form.name || ''} onChange={handleChange('name')} mb="sm"
+          placeholder="John Doe"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 }, root: { },  }}
           classNames={{ input: 'custom-input' }}
         />
         <Textarea label="Brief Intro" value={form.intro || ''} onChange={handleChange('intro')} mb="sm"
+          placeholder="I'm a fourth-year UC Berkeley Data Science undergraduate student"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />
         <TextInput label="Default Career Interest" value={form.default_interest || ''} onChange={handleChange('default_interest')} mb="sm"
+          placeholder="Data Analytics"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />
         <Textarea label="Personal Context" value={form.persona_context || ''} onChange={handleChange('persona_context')} mb="sm"
+          placeholder="I have previously worked on analyzing customers at X Company and love to do Y."
           autosize
           minRows={3}
           maxRows={12}
@@ -99,7 +99,8 @@ const Settings = () => {
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />
-        <Select label="Role Type" value={form.role_type || 'internship'} onChange={handleSelect} data={[{value:'internship',label:'Internship'},{value:'full-time',label:'Full-Time'}]} mb="sm"
+        <TextInput label="Role Type" value={form.role_type || ''} onChange={handleChange('role_type')} mb="sm"
+          placeholder="Internship/Full-Time/Research"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
         />
