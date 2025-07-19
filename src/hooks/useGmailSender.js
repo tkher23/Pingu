@@ -7,11 +7,31 @@ const useGmailSender = () => {
     const { gmailToken } = await chrome.storage.local.get("gmailToken");
     if (!gmailToken) throw new Error("No Gmail token found. Please log in.");
 
+    // Fetch user's Gmail signature
+    let signature = '';
+    try {
+      const sendAsRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs', {
+        headers: { Authorization: `Bearer ${gmailToken}` }
+      });
+      const sendAsData = await sendAsRes.json();
+      const primarySendAs = sendAsData.sendAs?.find(sa => sa.isPrimary);
+      signature = primarySendAs?.signature || '';
+    } catch {}
+
+    // Detect if signature is HTML
+    const isHtml = signature && /<[a-z][\s\S]*>/i.test(signature);
+    const contentType = isHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8';
+    const fullBody = isHtml ? `${body}<br><br>${signature}` : `${body}\n\n${signature}`;
+
+    // Proper RFC 5322 message formatting
     const message = [
+      `From: me`,
       `To: ${toEmail}`,
       `Subject: ${subject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: ${contentType}`,
       '',
-      body
+      fullBody
     ].join('\n');
 
     const rawBase64 = btoa(unescape(encodeURIComponent(message)))

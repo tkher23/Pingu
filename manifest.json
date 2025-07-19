@@ -5,8 +5,7 @@
   "description": "Generate personalized outreach emails!",
   "permissions": [
     "storage",
-    "sidePanel",
-    "tabs"
+    "sidePanel"
   ],
   "host_permissions": [
     "https://pingu-login.vercel.app/*"
