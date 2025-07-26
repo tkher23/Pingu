@@ -1,4 +1,4 @@
-# Pingu (v1) - Pending Public Approval for Google Chrome Webstore
+# Pingu (v1) - Currently in the Google Chrome Webstore
 
 Pingu is your AI-powered personal assistant for writing thoughtful, effective cold emails—fast. Built for students, job-seekers, founders, and professionals, Pingu personalizes your outreach based on profile details and intelligent web context.
 
