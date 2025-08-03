@@ -18,6 +18,9 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+BRIGHT_DATA_TOKEN = os.getenv("BRIGHT_DATA_TOKEN")
+BRIGHT_DATA_DATASET_ID = os.getenv("BRIGHT_DATA_DATASET_ID")
+
 
 # --- Logging setup for Render (stdout, global) ---
 logging.basicConfig(
@@ -521,6 +524,253 @@ def get_user_profile():
     if response.ok and response.json():
         return jsonify(response.json()[0]), 200
     return jsonify({}), 200
+
+# === BrightData LinkedIn Scraping Endpoints ===
+@app.route('/api/scrape-linkedin', methods=['POST'])
+def trigger_linkedin_scrape():
+    """Trigger a BrightData scraping job for a LinkedIn profile URL"""
+    try:
+        # Get auth token from request headers
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization token"}), 401
+        
+        token = auth_header.split(' ')[1]
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"error": "Invalid token"}), 401
+
+        # Check user credits
+        credits = get_user_credits(user_id)
+        if credits < 1:
+            return jsonify({"error": "Insufficient credits"}), 402
+
+        # Get URL from request
+        data = request.get_json()
+        linkedin_url = data.get('url')
+        if not linkedin_url:
+            return jsonify({"error": "Missing LinkedIn URL"}), 400
+
+        # Validate LinkedIn URL
+        if 'linkedin.com/in/' not in linkedin_url:
+            return jsonify({"error": "Invalid LinkedIn profile URL"}), 400
+
+        # Trigger BrightData scraping job
+        bright_data_url = "https://api.brightdata.com/datasets/v3/trigger"
+        headers = {
+            "Authorization": f"Bearer {BRIGHT_DATA_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        
+        params = {
+            "dataset_id": BRIGHT_DATA_DATASET_ID,
+            "include_errors": "true"
+        }
+        
+        # BrightData expects an array of URLs
+        data = [{"url": linkedin_url}]
+
+        response = requests.post(bright_data_url, headers=headers, params=params, json=data)
+        
+        if not response.ok:
+            log_to_file(f"BrightData API error: {response.status_code} - {response.text}")
+            return jsonify({"error": "Failed to start scraping job"}), 500
+
+        result = response.json()
+        # BrightData trigger returns a snapshot_id
+        job_id = result.get("snapshot_id")
+        
+        if not job_id:
+            log_to_file(f"BrightData response: {result}")
+            return jsonify({"error": "No job ID returned from BrightData"}), 500
+
+        # Decrement user credits since we started the job
+        decrement_user_credits(user_id, 1)
+        
+        return jsonify({"job_id": job_id, "status": "started"}), 200
+
+    except Exception as e:
+        log_to_file(f"Error in trigger_linkedin_scrape: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route('/api/scrape-result/<job_id>', methods=['GET'])
+def get_scrape_result(job_id):
+    """Poll for BrightData scraping results and generate email when complete"""
+    try:
+        # Get auth token from request headers
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization token"}), 401
+        
+        token = auth_header.split(' ')[1]
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"error": "Invalid token"}), 401
+
+        # Check BrightData job status
+        bright_data_url = f"https://api.brightdata.com/datasets/v3/snapshot/{job_id}"
+        headers = {
+            "Authorization": f"Bearer {BRIGHT_DATA_TOKEN}"
+        }
+        
+        params = {
+            "format": "json"
+        }
+
+        response = requests.get(bright_data_url, headers=headers, params=params)
+        
+        if not response.ok:
+            log_to_file(f"BrightData status check error: {response.status_code} - {response.text}")
+            return jsonify({"error": "Failed to check job status"}), 500
+
+        result = response.json()
+        
+        # Check if result is a list (completed data) or dict (status info)
+        if isinstance(result, list):
+            # Job completed, data returned directly as list
+            if result:
+                profile_data = result[0]
+                log_to_file(f"BrightData job completed, got {len(result)} profiles")
+            else:
+                return jsonify({"error": "No profile data found"}), 404
+        elif isinstance(result, dict):
+            # Handle dict response with status
+            status = result.get("status")
+            
+            if status != "completed":
+                return jsonify({"status": "pending"}), 200
+
+            # Extract profile data from results
+            if not result.get("data") or len(result["data"]) == 0:
+                return jsonify({"error": "No profile data found"}), 404
+
+            profile_data = result["data"][0]
+        else:
+            log_to_file(f"Unexpected BrightData response type: {type(result)}")
+            return jsonify({"error": "Unexpected response format"}), 500
+        
+        # Parse the LinkedIn data into our format
+        parsed_profile = parse_brightdata_linkedin(profile_data)
+        
+        # Generate email using existing pipeline
+        email_profiles = [{
+            "linkedin": {"raw_text": format_profile_for_email(parsed_profile)},
+            "bio_page": {"raw_text": ""},
+            "values_page": {"raw_text": ""}
+        }]
+        
+        processed = process_profiles_batch(
+            email_profiles,
+            generate_email_flag=True,
+            generate_subject_flag=True,
+            simple_email=False
+        )
+        
+        generated_profile = processed[0]
+        
+        return jsonify({
+            "status": "done",
+            "profile": parsed_profile,
+            "generated_subject": generated_profile.get("generated_subject", ""),
+            "generated_email": generated_profile.get("generated_email", "")
+        }), 200
+
+    except Exception as e:
+        log_to_file(f"Error in get_scrape_result: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+def parse_brightdata_linkedin(profile_data):
+    """Parse BrightData LinkedIn response into structured format"""
+    try:
+        parsed = {
+            "name": profile_data.get("name", ""),
+            "headline": profile_data.get("position", ""),  # BrightData uses 'position' not 'headline'
+            "about": profile_data.get("about", "") or "",  # Handle null values
+            "experiences": [],
+            "education": [],
+            "location": profile_data.get("city", "")  # BrightData uses 'city' not 'location'
+        }
+        
+        # Parse experiences - BrightData may return null
+        experience = profile_data.get("experience")
+        if experience and isinstance(experience, list):
+            for exp in experience:
+                if isinstance(exp, dict):
+                    parsed["experiences"].append({
+                        "title": exp.get("title", ""),
+                        "company": exp.get("company", ""),
+                        "duration": exp.get("duration", ""),
+                        "description": exp.get("description", "")
+                    })
+        elif experience and isinstance(experience, dict):
+            # Single experience object
+            parsed["experiences"].append({
+                "title": experience.get("title", ""),
+                "company": experience.get("company", ""),
+                "duration": experience.get("duration", ""),
+                "description": experience.get("description", "")
+            })
+        
+        # Parse education - BrightData structure is different
+        education = profile_data.get("education", [])
+        if isinstance(education, list):
+            for edu in education:
+                if isinstance(edu, dict):
+                    parsed["education"].append({
+                        "school": edu.get("title", ""),  # BrightData uses 'title' for school name
+                        "degree": "",  # Not provided in BrightData response
+                        "field": "",   # Not provided in BrightData response
+                        "years": f"{edu.get('start_year', '')}-{edu.get('end_year', '')}" if edu.get('start_year') or edu.get('end_year') else ""
+                    })
+        
+        return parsed
+        
+    except Exception as e:
+        log_to_file(f"Error parsing LinkedIn data: {str(e)}")
+        return {
+            "name": "",
+            "headline": "",
+            "about": "",
+            "experiences": [],
+            "education": [],
+            "location": ""
+        }
+
+def format_profile_for_email(parsed_profile):
+    """Format parsed LinkedIn profile data for email generation"""
+    try:
+        formatted = f"Name: {parsed_profile['name']}\n"
+        formatted += f"Position: {parsed_profile['headline']}\n"  # Changed from Headline to Position
+        
+        if parsed_profile['location']:
+            formatted += f"Location: {parsed_profile['location']}\n"
+        
+        if parsed_profile['about']:
+            formatted += f"\nAbout:\n{parsed_profile['about']}\n"
+        
+        if parsed_profile['experiences']:
+            formatted += "\nExperience:\n"
+            for exp in parsed_profile['experiences'][:3]:  # Limit to top 3 experiences
+                formatted += f"• {exp['title']} at {exp['company']}"
+                if exp['duration']:
+                    formatted += f" ({exp['duration']})"
+                formatted += "\n"
+                if exp['description']:
+                    formatted += f"  {exp['description'][:200]}...\n"
+        
+        if parsed_profile['education']:
+            formatted += "\nEducation:\n"
+            for edu in parsed_profile['education'][:2]:  # Limit to top 2 education entries
+                school_info = edu['school']
+                if edu['years']:
+                    school_info += f" ({edu['years']})"
+                formatted += f"• {school_info}\n"
+        
+        return formatted
+        
+    except Exception as e:
+        log_to_file(f"Error formatting profile: {str(e)}")
+        return f"Name: {parsed_profile.get('name', '')}\nPosition: {parsed_profile.get('headline', '')}"
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))

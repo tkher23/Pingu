@@ -46,6 +46,75 @@ def parse_linkedin(raw_text, person_name=None):
         print(f"Error parsing LinkedIn data: {e}")
     return profile_data
 
+def parse_brightdata_linkedin_for_backend(profile_data):
+    """Parse BrightData LinkedIn response for backend processing"""
+    try:
+        formatted_text = f"Name: {profile_data.get('name', '')}\n"
+        formatted_text += f"Position: {profile_data.get('position', '')}\n"  # BrightData uses 'position' not 'headline'
+        
+        if profile_data.get('city'):
+            formatted_text += f"Location: {profile_data.get('city')}\n"  # BrightData uses 'city' not 'location'
+        
+        if profile_data.get('about'):
+            formatted_text += f"\nAbout:\n{profile_data.get('about')}\n"
+        
+        # Handle experience - can be null
+        experience = profile_data.get('experience')
+        if experience:
+            formatted_text += "\nExperience:\n"
+            if isinstance(experience, list):
+                for exp in experience[:3]:  # Limit to top 3
+                    formatted_text += f"• {exp.get('title', '')} at {exp.get('company', '')}"
+                    if exp.get('duration'):
+                        formatted_text += f" ({exp.get('duration')})"
+                    formatted_text += "\n"
+                    if exp.get('description'):
+                        formatted_text += f"  {exp.get('description', '')[:200]}...\n"
+            elif isinstance(experience, dict):
+                # Single experience
+                formatted_text += f"• {experience.get('title', '')} at {experience.get('company', '')}"
+                if experience.get('duration'):
+                    formatted_text += f" ({experience.get('duration')})"
+                formatted_text += "\n"
+        
+        # Handle education - different structure in BrightData
+        education = profile_data.get('education', [])
+        if education and isinstance(education, list):
+            formatted_text += "\nEducation:\n"
+            for edu in education[:2]:  # Limit to top 2
+                school_name = edu.get('title', '')  # BrightData uses 'title' for school name
+                years = ""
+                if edu.get('start_year') or edu.get('end_year'):
+                    years = f" ({edu.get('start_year', '')}-{edu.get('end_year', '')})"
+                formatted_text += f"• {school_name}{years}\n"
+        
+        return {
+            "source": "LinkedIn",
+            "person_name": profile_data.get('name', ''),
+            "headline": profile_data.get('position', ''),  # Map position to headline
+            "details": {
+                "bio": profile_data.get('about', '') or '',  # Handle null values
+                "experiences": [f"{exp.get('title', '')} at {exp.get('company', '')}" for exp in (experience if isinstance(experience, list) else [experience] if experience else [])],
+                "education": [edu.get('title', '') for edu in education if isinstance(edu, dict)] if education else [],
+                "achievements": [],
+                "interests": []
+            }
+        }
+    except Exception as e:
+        print(f"Error parsing BrightData LinkedIn data: {e}")
+        return {
+            "source": "LinkedIn",
+            "person_name": "",
+            "headline": "",
+            "details": {
+                "bio": "",
+                "experiences": [],
+                "education": [],
+                "achievements": [],
+                "interests": []
+            }
+        }
+
 def parse_bio_page_new(raw_text):
     if not isinstance(raw_text, str):
         return ""
