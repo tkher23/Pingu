@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Paper, Box, Button, TextInput, Group, Badge, Loader, Notification, Stack, Text } from '@mantine/core';
 import SimpleEmailForm from './SimpleEmailForm';
 import AdvancedEmailForm from './AdvancedEmailForm';
+import AgenticMode from './AgenticMode';
+import BatchMode from './BatchMode';
 import Settings from './Settings';
 import SubscriptionsOnboardingPanel from './SubscriptionsOnboardingPanel';
 import useLogin from '../hooks/useLogin';
@@ -183,6 +185,22 @@ export default function MainUI() {
                   Advanced Email
                 </Tabs.Tab>
                 <Tabs.Tab
+                  value="agentic"
+                  style={{ ...blueButtonStyle, ...(hovered === 'agentic' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
+                  onMouseEnter={() => setHovered('agentic')}
+                  onMouseLeave={() => setHovered(false)}
+                >
+                  Agentic Mode
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value="batch"
+                  style={{ ...blueButtonStyle, ...(hovered === 'batch' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
+                  onMouseEnter={() => setHovered('batch')}
+                  onMouseLeave={() => setHovered(false)}
+                >
+                  Batch Mode
+                </Tabs.Tab>
+                <Tabs.Tab
                   value="subscriptions"
                   style={{ ...blueButtonStyle, ...(hovered === 'subscriptions' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
                   onMouseEnter={() => setHovered('subscriptions')}
@@ -210,6 +228,22 @@ export default function MainUI() {
             </Tabs.Panel>
             <Tabs.Panel value="advanced" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
               <AdvancedEmailForm 
+                credits={credits}
+                creditsLoading={creditsLoading}
+                creditsError={creditsError}
+                fetchCredits={fetchCredits}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="agentic" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
+              <AgenticMode 
+                credits={credits}
+                creditsLoading={creditsLoading}
+                creditsError={creditsError}
+                fetchCredits={fetchCredits}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="batch" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
+              <BatchMode 
                 credits={credits}
                 creditsLoading={creditsLoading}
                 creditsError={creditsError}
