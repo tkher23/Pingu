@@ -41,6 +41,26 @@ sample_brightdata_response = [
                 "description": "Worked on web development projects using React and Python."
             }
         ],
+        "projects": [
+            {
+                "title": "AI-Powered Email Generator",
+                "description": "Built a machine learning system that generates personalized emails using natural language processing.",
+                "url": "https://github.com/ana/email-generator"
+            },
+            {
+                "title": "Smart Campus App",
+                "description": "Developed a mobile application for university students to manage their schedules and connect with peers.",
+                "url": "https://github.com/ana/campus-app"
+            }
+        ],
+        "publications": [
+            {
+                "title": "Machine Learning Applications in Customer Communication",
+                "description": "Research paper on using AI to improve customer engagement through personalized messaging.",
+                "date": "2024",
+                "url": "https://arxiv.org/paper123"
+            }
+        ],
         "current_company": {
             "location": None
         },
@@ -295,6 +315,86 @@ def test_brightdata_parsing():
     
     print("✅ Parsing tests completed!")
 
+def test_full_email_generation():
+    """Test the complete email generation pipeline with projects and publications"""
+    print("\n🧪 Testing Full Email Generation Pipeline...")
+    print("=" * 60)
+    
+    # Use our sample data with projects and publications
+    profile_data = sample_brightdata_response[0]
+    
+    # Parse the LinkedIn data
+    parsed_profile = parse_brightdata_linkedin(profile_data)
+    
+    # Create a complete profile for email generation (matching app.py structure)
+    email_profile = {
+        "linkedin": {"raw_text": format_profile_for_email(parsed_profile)},
+        "bio_page": {"raw_text": ""},
+        "values_page": {"raw_text": "Innovation, collaboration, and continuous learning"},
+        "user_info": {
+            "name": "Alex Johnson",
+            "intro": "a computer science student",
+            "persona_context": "passionate about AI and machine learning",
+            "company_interest": "UFMT"
+        },
+        "recipient_name": "Ana Torres",
+        "internship_interest": "software engineering",
+        "company_of_interest": "UFMT",
+        "role_type": "internship"
+    }
+    
+    print("📧 Testing email generation with rich profile data...")
+    try:
+        from backend import process_profiles_batch
+        
+        # Debug: Show the formatted text that will be parsed
+        print("🔍 Debug - Formatted LinkedIn text:")
+        print(email_profile['linkedin']['raw_text'])
+        print("\n" + "=" * 40)
+        
+        # Generate email using the full pipeline
+        processed = process_profiles_batch([email_profile], generate_email_flag=True, generate_subject_flag=True)
+        
+        generated_email = processed[0].get("generated_email", "")
+        generated_subject = processed[0].get("generated_subject", "")
+        
+        print("✅ Email Generation Results:")
+        print(f"📧 Subject: {generated_subject}")
+        print(f"📝 Email:\n{generated_email}")
+        print("\n" + "=" * 60)
+        
+        # Test with sparse profile (minimal data)
+        print("📧 Testing email generation with sparse profile data...")
+        
+        sparse_profile = {
+            "linkedin": {"raw_text": "Name: John Doe\nPosition: Software Engineer"},
+            "bio_page": {"raw_text": ""},
+            "values_page": {"raw_text": ""},
+            "user_info": {
+                "name": "Alex Johnson",
+                "intro": "a computer science student",
+                "persona_context": "passionate about technology"
+            },
+            "recipient_name": "John Doe",
+            "internship_interest": "software development",
+            "company_of_interest": "Tech Company",
+            "role_type": "internship"
+        }
+        
+        processed_sparse = process_profiles_batch([sparse_profile], generate_email_flag=True, generate_subject_flag=False)
+        sparse_email = processed_sparse[0].get("generated_email", "")
+        
+        print("✅ Sparse Profile Email Results:")
+        print(f"📝 Email:\n{sparse_email}")
+        print("\n✅ Full email generation tests completed!")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error in email generation: {e}")
+        print("💡 Make sure you have OPENAI_API_KEY set in your .env file")
+        return False
+
 def test_null_handling():
     """Test handling of null values"""
     print("\n🧪 Testing NULL Value Handling...")
@@ -345,6 +445,12 @@ def run_all_tests():
     # Test 1: Local parsing
     test_brightdata_parsing()
     test_null_handling()
+    
+    # Test 1.5: Full email generation
+    print(f"\n{'='*70}")
+    user_input_email = input("🤔 Test full email generation (requires OpenAI API)? (y/N): ")
+    if user_input_email.lower() == 'y':
+        test_full_email_generation()
     
     # Test 2: Direct BrightData API (optional - requires real API)
     print(f"\n{'='*70}")
