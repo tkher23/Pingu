@@ -20,6 +20,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 BRIGHT_DATA_TOKEN = os.getenv("BRIGHT_DATA_TOKEN")
 BRIGHT_DATA_DATASET_ID = os.getenv("BRIGHT_DATA_DATASET_ID")
+APOLLO_API_KEY = os.getenv("APOLLO_API_KEY")
 
 
 # --- Logging setup for Render (stdout, global) ---
@@ -32,6 +33,256 @@ logging.basicConfig(
 
 def log_to_file(msg):
     logging.info(msg)
+
+def find_emails_with_apollo_bulk(brightdata_profiles):
+    """
+    Use Apollo Bulk People Enrichment API to find emails for multiple people using BrightData profile info
+    
+    Args:
+        brightdata_profiles (list): List of parsed BrightData profiles
+    
+    Returns:
+        list: List of contact info dicts for each profile
+    """
+    if not APOLLO_API_KEY:
+        log_to_file("Apollo API key not configured for bulk processing")
+        return [{"email": None, "phone": None, "apollo_found": False} for _ in brightdata_profiles]
+    
+    if not brightdata_profiles:
+        return []
+    
+    log_to_file(f"🚀 Starting bulk Apollo enrichment for {len(brightdata_profiles)} profiles")
+    
+    # Initialize results array
+    results = [{"email": None, "phone": None, "apollo_found": False} for _ in brightdata_profiles]
+    
+    # Process in batches of 10 (Apollo bulk limit)
+    for batch_start in range(0, len(brightdata_profiles), 10):
+        batch_end = min(batch_start + 10, len(brightdata_profiles))
+        batch_profiles = brightdata_profiles[batch_start:batch_end]
+        
+        # Prepare bulk enrichment request
+        apollo_url = "https://api.apollo.io/api/v1/people/bulk_match"
+        headers = {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            "X-Api-Key": APOLLO_API_KEY
+        }
+        
+        details = []
+        for i, profile in enumerate(batch_profiles):
+            linkedin_url = profile.get("linkedin_url", "").strip()
+            
+            log_to_file(f"🔗 Profile {i+1}: LinkedIn URL = '{linkedin_url}'")
+            
+            if not linkedin_url:
+                log_to_file(f"❌ Profile {i+1}: Missing LinkedIn URL")
+                details.append({})  # Empty details for profiles without LinkedIn URL
+                continue
+                
+            # Use only LinkedIn URL - this is often the most reliable approach
+            person_details = {
+                "linkedin_url": linkedin_url
+            }
+            
+            details.append(person_details)
+            log_to_file(f"✅ Profile {i+1}: Added to Apollo batch")
+        
+        if not details or all(not d for d in details):
+            log_to_file(f"❌ No valid LinkedIn URLs found in batch")
+            continue
+        
+        payload = {
+            "reveal_personal_emails": True,
+            "details": details
+        }
+        
+        log_to_file(f"� Apollo bulk enrichment API call:")
+        log_to_file(f"   URL: {apollo_url}")
+        log_to_file(f"   Payload: {json.dumps(payload, indent=2)}")
+        log_to_file(f"   API Key: {APOLLO_API_KEY[:10]}...")
+        
+        response = requests.post(apollo_url, headers=headers, json=payload)
+        
+        log_to_file(f"📡 Apollo bulk API response status: {response.status_code}")
+        
+        if response.ok:
+            data = response.json()
+            log_to_file(f"� Apollo bulk response data: {json.dumps(data, indent=2)}")
+            matches = data.get("matches", [])
+            
+            log_to_file(f"🔍 Found {len(matches)} matches in Apollo bulk response")
+            
+            # Map enriched results back to correct positions
+            for j, match in enumerate(matches):
+                global_index = batch_start + j
+                if global_index >= len(results):
+                    break
+                    
+                log_to_file(f"📊 Processing match {j+1}: {json.dumps(match, indent=2) if match else 'None'}")
+                    
+                if match:
+                    # Apollo bulk API returns person data directly, not nested under "person"
+                    email = match.get("email")
+                    log_to_file(f"📧 Match {j+1} email: '{email}'")
+                    
+                    if email and email != "email_not_unlocked@domain.com":
+                        results[global_index] = {
+                            "email": email,
+                            "phone": None,
+                            "apollo_found": True,
+                            "apollo_name": match.get("name"),
+                            "apollo_title": match.get("title"),
+                            "apollo_company": match.get("organization", {}).get("name") if match.get("organization") else None
+                        }
+                        profile_name = batch_profiles[j].get("name", "Unknown")
+                        log_to_file(f"✅ Bulk found email for {profile_name}: {email}")
+                    else:
+                        log_to_file(f"❌ Match {j+1}: Invalid email ('{email}')")
+                else:
+                    log_to_file(f"❌ Match {j+1}: No match data")
+        else:
+            log_to_file(f"❌ Bulk enrichment API error: {response.status_code} - {response.text}")
+    
+    success_count = sum(1 for r in results if r.get('apollo_found'))
+    log_to_file(f"🎉 Bulk Apollo processing complete. Found emails for {success_count}/{len(results)} profiles")
+    return results
+
+def find_email_with_apollo(brightdata_profile):
+    """
+    Use Apollo People Enrichment API to find email using BrightData profile info
+    
+    Args:
+        brightdata_profile (dict): Parsed BrightData profile with name, company, location, title
+    
+    Returns:
+        dict: Contains email, phone, and other contact info if found
+    """
+    if not APOLLO_API_KEY:
+        log_to_file("Apollo API key not configured")
+        return {"email": None, "phone": None, "apollo_found": False}
+    
+    linkedin_url = brightdata_profile.get("linkedin_url", "").strip()
+    
+    log_to_file(f"� Using LinkedIn URL for Apollo: '{linkedin_url}'")
+    
+    if not linkedin_url:
+        log_to_file("❌ No LinkedIn URL provided for Apollo enrichment")
+        return {"email": None, "phone": None, "apollo_found": False}
+    
+    try:
+        apollo_url = "https://api.apollo.io/api/v1/people/match"
+        headers = {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            "X-Api-Key": APOLLO_API_KEY
+        }
+        
+        # Build enrichment parameters with just LinkedIn URL
+        enrich_params = {
+            "linkedin_url": linkedin_url,
+            "reveal_personal_emails": True
+        }
+        
+        log_to_file(f"� Apollo enrichment API call with params: {json.dumps(enrich_params, indent=2)}")
+        log_to_file(f"🌐 Apollo API URL: {apollo_url}")
+        log_to_file(f"🔑 Apollo API Key: {APOLLO_API_KEY[:10]}...")
+        
+        response = requests.post(apollo_url, headers=headers, json=enrich_params)
+        
+        log_to_file(f"📡 Apollo API response status: {response.status_code}")
+        
+        if not response.ok:
+            log_to_file(f"❌ Apollo enrichment API error: {response.status_code} - {response.text}")
+            return {"email": None, "phone": None, "apollo_found": False}
+        
+        data = response.json()
+        log_to_file(f"📄 Apollo enrichment response data: {json.dumps(data, indent=2)}")
+        
+        person = data.get("person", {})
+        
+        if not person:
+            log_to_file(f"❌ No person data in Apollo enrichment response")
+            return {"email": None, "phone": None, "apollo_found": False}
+        
+        email = person.get("email")
+        log_to_file(f"📧 Extracted email from Apollo: '{email}'")
+        
+        if email and email != "email_not_unlocked@domain.com":
+            log_to_file(f"✅ Apollo found email: {email}")
+            return {
+                "email": email,
+                "phone": None,
+                "apollo_found": True,
+                "apollo_name": person.get("name"),
+                "apollo_title": person.get("title"),
+                "apollo_company": person.get("organization", {}).get("name") if person.get("organization") else None
+            }
+        else:
+            log_to_file(f"❌ No valid email in Apollo enrichment response (got: '{email}')")
+            return {"email": None, "phone": None, "apollo_found": False}
+            
+    except Exception as e:
+        log_to_file(f"❌ Error in Apollo enrichment: {str(e)}")
+        return {"email": None, "phone": None, "apollo_found": False, "error": str(e)}
+
+def extract_company_domain(company_name):
+    """
+    Try to guess company domain from company name
+    This is a simple heuristic - in practice you might want a more sophisticated approach
+    """
+    if not company_name:
+        return None
+    
+    # Common mappings for well-known companies
+    domain_mappings = {
+        "google": "google.com",
+        "microsoft": "microsoft.com",
+        "apple": "apple.com",
+        "amazon": "amazon.com",
+        "meta": "meta.com",
+        "facebook": "meta.com",
+        "netflix": "netflix.com",
+        "salesforce": "salesforce.com",
+        "oracle": "oracle.com",
+        "ibm": "ibm.com",
+        "adobe": "adobe.com",
+        "linkedin": "linkedin.com",
+        "twitter": "twitter.com",
+        "uber": "uber.com",
+        "airbnb": "airbnb.com",
+        "spotify": "spotify.com",
+        "tesla": "tesla.com"
+    }
+    
+    company_lower = company_name.lower().strip()
+    
+    # Check direct mappings first
+    for company, domain in domain_mappings.items():
+        if company in company_lower:
+            return domain
+    
+    # Simple heuristic: take first word and add .com
+    words = company_lower.replace(",", "").replace(".", "").replace("&", "").split()
+    if words:
+        first_word = words[0]
+        # Skip common business words
+        skip_words = {"the", "inc", "llc", "corp", "corporation", "company", "co", "ltd", "limited"}
+        if first_word not in skip_words and len(first_word) > 2:
+            return f"{first_word}.com"
+    
+    return None
+
+def should_use_apollo_enrichment(user_plan_type):
+    """
+    Determine if Apollo enrichment should be used based on user plan
+    Apollo costs credits, so we may want to limit this to paid plans
+    """
+    # For now, enable for all plans, but you could restrict to paid plans only
+    return True
+    
+    # Alternative: Only for paid plans
+    # return user_plan_type in ["basic", "advanced"]
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
@@ -588,6 +839,7 @@ def trigger_linkedin_batch_scrape():
         # Store metadata for this batch job
         batch_metadata = {
             'urls_with_info': urls_with_info,
+            'original_linkedin_urls': linkedin_urls,  # Store original URLs for Apollo enrichment
             'user_id': user_id
         }
 
@@ -694,6 +946,12 @@ def trigger_linkedin_scrape():
             log_to_file(f"BrightData response: {result}")
             return jsonify({"error": "No job ID returned from BrightData"}), 500
 
+        # Store metadata for this single job - IMPORTANT: Store original LinkedIn URL
+        batch_job_metadata[job_id] = {
+            'original_linkedin_url': linkedin_url,
+            'user_id': user_id
+        }
+
         # Decrement user credits since we started the job (3 credits for BrightData processing)
         decrement_user_credits(user_id, 3)
         
@@ -782,12 +1040,43 @@ def get_batch_scrape_result(job_id):
         # Get stored metadata for this batch job
         batch_metadata = batch_job_metadata.get(job_id, {})
         urls_with_info = batch_metadata.get('urls_with_info', [])
+        original_linkedin_urls = batch_metadata.get('original_linkedin_urls', [])
+        
+        # Check user plan for Apollo enrichment
+        user_plan_url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type"
+        user_plan_response = requests.get(user_plan_url, headers=user_settings_headers)
+        user_plan_type = "trial"  # Default
+        if user_plan_response.ok and user_plan_response.json():
+            user_plan_type = user_plan_response.json()[0].get("plan_type", "trial")
         
         # Process each profile and generate emails
         processed_profiles = []
-        for i, profile_data in enumerate(profiles_data):
-            # Parse the LinkedIn data into our format
+        
+        # Parse all profiles first
+        parsed_profiles = []
+        for profile_data in profiles_data:
             parsed_profile = parse_brightdata_linkedin(profile_data)
+            parsed_profiles.append(parsed_profile)
+        
+        # Use bulk Apollo enrichment with ORIGINAL URLs (not from BrightData)
+        apollo_results = []
+        if should_use_apollo_enrichment(user_plan_type) and original_linkedin_urls:
+            log_to_file(f"🔗 Using {len(original_linkedin_urls)} ORIGINAL LinkedIn URLs for bulk Apollo enrichment")
+            log_to_file(f"🔗 Original URLs: {original_linkedin_urls}")
+            # Create enrichment profiles with original URLs
+            enrichment_profiles = [{"linkedin_url": url} for url in original_linkedin_urls]
+            apollo_results = find_emails_with_apollo_bulk(enrichment_profiles)
+        else:
+            apollo_results = [{"email": None, "phone": None, "apollo_found": False} for _ in parsed_profiles]
+        
+        for i, profile_data in enumerate(profiles_data):
+            parsed_profile = parsed_profiles[i]
+            apollo_result = apollo_results[i] if i < len(apollo_results) else {"email": None, "phone": None, "apollo_found": False}
+            
+            # Add Apollo results to parsed profile
+            parsed_profile["apollo_email"] = apollo_result.get("email")
+            parsed_profile["apollo_phone"] = apollo_result.get("phone")
+            parsed_profile["apollo_found"] = apollo_result.get("apollo_found", False)
             
             # Find the corresponding URL info
             profile_url = profile_data.get("url", "")
@@ -826,7 +1115,10 @@ def get_batch_scrape_result(job_id):
                 "profile": parsed_profile,
                 "generated_subject": generated_profile.get("generated_subject", ""),
                 "generated_email": generated_profile.get("generated_email", ""),
-                "url": profile_data.get("url", "")  # Include original URL for reference
+                "url": profile_data.get("url", ""),  # Include original URL for reference
+                "apollo_email": parsed_profile.get("apollo_email"),
+                "apollo_phone": parsed_profile.get("apollo_phone"),
+                "apollo_found": parsed_profile.get("apollo_found", False)
             })
         
         # Clean up batch metadata
@@ -906,6 +1198,24 @@ def get_scrape_result(job_id):
         # Parse the LinkedIn data into our format
         parsed_profile = parse_brightdata_linkedin(profile_data)
         
+        # Get stored metadata for this job to retrieve original LinkedIn URL
+        job_metadata = batch_job_metadata.get(job_id, {})
+        original_linkedin_url = job_metadata.get('original_linkedin_url', '')
+        
+        log_to_file(f"🔗 Using ORIGINAL LinkedIn URL for Apollo: '{original_linkedin_url}'")
+        
+        # Try to find email using Apollo with ORIGINAL LinkedIn URL (not from BrightData response)
+        apollo_result = {"email": None, "phone": None, "apollo_found": False}
+        if should_use_apollo_enrichment("advanced") and original_linkedin_url:  # Default to advanced plan behavior
+            # Create enrichment profile with original URL
+            enrichment_profile = {"linkedin_url": original_linkedin_url}
+            apollo_result = find_email_with_apollo(enrichment_profile)
+        
+        # Add Apollo results to parsed profile
+        parsed_profile["apollo_email"] = apollo_result.get("email")
+        parsed_profile["apollo_phone"] = apollo_result.get("phone")
+        parsed_profile["apollo_found"] = apollo_result.get("apollo_found", False)
+        
         # Fetch user profile settings to include in email generation
         user_settings_url = f"{SUPABASE_URL}/rest/v1/user_settings?id=eq.{user_id}"
         user_settings_headers = {
@@ -947,11 +1257,18 @@ def get_scrape_result(job_id):
         
         generated_profile = processed[0]
         
+        # Clean up job metadata
+        if job_id in batch_job_metadata:
+            del batch_job_metadata[job_id]
+        
         return jsonify({
             "status": "done",
             "profile": parsed_profile,
             "generated_subject": generated_profile.get("generated_subject", ""),
-            "generated_email": generated_profile.get("generated_email", "")
+            "generated_email": generated_profile.get("generated_email", ""),
+            "apollo_email": parsed_profile.get("apollo_email"),
+            "apollo_phone": parsed_profile.get("apollo_phone"),
+            "apollo_found": parsed_profile.get("apollo_found", False)
         }), 200
 
     except Exception as e:
@@ -965,10 +1282,14 @@ def parse_brightdata_linkedin(profile_data):
             "name": profile_data.get("name", ""),
             "headline": profile_data.get("position", ""),  # BrightData uses 'position' not 'headline'
             "about": profile_data.get("about", "") or "",  # Handle null values
+            "location": profile_data.get("location", ""),  # Keep location for other uses
+            # NOTE: linkedin_url is now stored in job metadata, not from BrightData response
             "experiences": [],
             "education": [],
             "projects": [],
-            "publications": []
+            "publications": [],
+            "current_company": "",
+            "current_title": ""
         }
         
         # Parse experiences - BrightData may return null
@@ -981,21 +1302,31 @@ def parse_brightdata_linkedin(profile_data):
             for i, exp in enumerate(experience):
                 log_to_file(f"DEBUG: Experience {i}: {exp}")
                 if isinstance(exp, dict):
-                    parsed["experiences"].append({
+                    exp_data = {
                         "title": exp.get("title", ""),
                         "company": exp.get("company", ""),
                         "duration": exp.get("duration", ""),
                         "description": exp.get("description", "")
-                    })
+                    }
+                    parsed["experiences"].append(exp_data)
+                    
+                    # Get current job info (first experience is usually current)
+                    if i == 0:
+                        parsed["current_title"] = exp_data["title"]
+                        parsed["current_company"] = exp_data["company"]
+                        
         elif experience and isinstance(experience, dict):
             # Single experience object
             log_to_file(f"DEBUG: Processing single experience: {experience}")
-            parsed["experiences"].append({
+            exp_data = {
                 "title": experience.get("title", ""),
                 "company": experience.get("company", ""),
                 "duration": experience.get("duration", ""),
                 "description": experience.get("description", "")
-            })
+            }
+            parsed["experiences"].append(exp_data)
+            parsed["current_title"] = exp_data["title"]
+            parsed["current_company"] = exp_data["company"]
         else:
             log_to_file(f"DEBUG: No valid experience data found")
         
@@ -1061,7 +1392,9 @@ def parse_brightdata_linkedin(profile_data):
             "about": "",
             "experiences": [],
             "education": [],
-            "location": ""
+            "location": "",
+            "current_company": "",
+            "current_title": ""
         }
 
 def format_profile_for_email(parsed_profile):
