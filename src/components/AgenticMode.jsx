@@ -199,6 +199,12 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
           setProfileData(result.profile);
           setGeneratedSubject(result.generated_subject);
           setGeneratedEmail(result.generated_email);
+          
+          // Auto-populate email if Apollo found one
+          if (result.apollo_email && result.apollo_found) {
+            setRecipientEmail(result.apollo_email);
+          }
+          
           setScrapingStatus('Complete!');
           setIsScrapingInProgress(false);
           setJobId(null); // Clear job ID
@@ -273,6 +279,31 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
     chrome.tabs.create({ url: gmailUrl });
   };
 
+  const clearAll = () => {
+    // Clear all state
+    setRecipientEmail('');
+    setGeneratedSubject('');
+    setGeneratedEmail('');
+    setProfileData(null);
+    setCurrentUrl('');
+    setJobId(null);
+    setIsScrapingInProgress(false);
+    setScrapingStatus('');
+    setError('');
+    setSendStatus('');
+    
+    // Clear localStorage
+    localStorage.removeItem('am_recipientEmail');
+    localStorage.removeItem('am_generatedSubject');
+    localStorage.removeItem('am_generatedEmail');
+    localStorage.removeItem('am_currentUrl');
+    localStorage.removeItem('am_jobId');
+    localStorage.removeItem('am_isScrapingInProgress');
+    localStorage.removeItem('am_scrapingStatus');
+    
+    // Keep company info and recipient bio since they're optional and user might want to reuse
+  };
+
   return (
     <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
       <Stack spacing="md">
@@ -290,17 +321,30 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
           Automatically scrape the LinkedIn profile you're viewing and generate a personalized email using AI.
         </Text>
 
-        {/* Recipient Email Input */}
-        <TextInput 
-          label="Recipient Email" 
-          placeholder="Enter the email address to send to..."
-          value={recipientEmail} 
-          onChange={(e) => setRecipientEmail(e.target.value)} 
-          radius="md" 
-          size="sm"
-          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-          classNames={{ input: 'custom-input' }}
-        />
+        {/* Current URL Display */}
+        {currentUrl && (
+          <Group spacing="xs">
+            <Text size="lg" color="#0077b5">💼</Text>
+            <Text size="xs" color="dimmed" style={{ wordBreak: 'break-all' }}>
+              {currentUrl}
+            </Text>
+          </Group>
+        )}
+
+        {/* Scrape Button */}
+        <Button
+          onClick={startLinkedInScrape}
+          disabled={isScrapingInProgress || credits < 1}
+          loading={isScrapingInProgress}
+          size="md"
+          style={{
+            background: isScrapingInProgress ? '#ccc' : '#0077b5',
+            border: 'none',
+            color: 'white'
+          }}
+        >
+          {isScrapingInProgress ? 'Scraping...' : '� Scrape LinkedIn Profile'}
+        </Button>
 
         {/* Company Info Section */}
         <Stack spacing="sm">
@@ -311,7 +355,7 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
             onClick={() => setShowCompanyInfo(!showCompanyInfo)}
             style={{ alignSelf: 'flex-start' }}
           >
-            {showCompanyInfo ? '📄 Hide Company Info' : '📄 Add Company Info'}
+            {showCompanyInfo ? '📄 Hide Company Info' : '📄 (Optional) Add Company Info'}
           </Button>
           
           {showCompanyInfo && (
@@ -343,7 +387,7 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
             onClick={() => setShowRecipientBio(!showRecipientBio)}
             style={{ alignSelf: 'flex-start' }}
           >
-            {showRecipientBio ? '👤 Hide Recipient Bio' : '👤 Add Recipient Bio'}
+            {showRecipientBio ? '👤 Hide Recipient Bio' : '👤 (Optional) Add Recipient Bio'}
           </Button>
           
           {showRecipientBio && (
@@ -366,30 +410,28 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
           )}
         </Stack>
 
-        {/* Current URL Display */}
-        {currentUrl && (
-          <Group spacing="xs">
-            <Text size="lg" color="#0077b5">💼</Text>
-            <Text size="xs" color="dimmed" style={{ wordBreak: 'break-all' }}>
-              {currentUrl}
-            </Text>
-          </Group>
+        {/* Recipient Email Input - Only show after scraping starts or data exists */}
+        {(profileData || generatedEmail || isScrapingInProgress) && (
+          <>
+            <TextInput 
+              label="Recipient Email" 
+              placeholder="Enter the email address to send to..."
+              value={recipientEmail} 
+              onChange={(e) => setRecipientEmail(e.target.value)} 
+              radius="md" 
+              size="sm"
+              styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+              classNames={{ input: 'custom-input' }}
+            />
+            
+            {/* Apollo Email Status */}
+            {profileData && profileData.apollo_found && (
+              <Alert color="green" variant="light" radius="md" size="sm">
+                📧 Email auto-filled using Apollo People Search
+              </Alert>
+            )}
+          </>
         )}
-
-        {/* Scrape Button */}
-        <Button
-          onClick={startLinkedInScrape}
-          disabled={isScrapingInProgress || credits < 1}
-          loading={isScrapingInProgress}
-          size="md"
-          style={{
-            background: isScrapingInProgress ? '#ccc' : '#0077b5',
-            border: 'none',
-            color: 'white'
-          }}
-        >
-          {isScrapingInProgress ? 'Scraping...' : '💼 Scrape LinkedIn Profile'}
-        </Button>
 
         {/* Status */}
         {scrapingStatus && (
@@ -460,13 +502,6 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
             />
             <Group spacing="md">
               <Button
-                onClick={() => copyToClipboard(generatedEmail)}
-                radius="md"
-                style={{ background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', fontWeight: 600, fontSize: 14 }}
-              >
-                Copy Email
-              </Button>
-              <Button
                 onClick={handleSendGmail}
                 disabled={!recipientEmail || !generatedSubject || !generatedEmail}
                 radius="md"
@@ -507,6 +542,20 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
             ✅ Email generated successfully! You can edit it above and click "Send" to open Gmail.
           </Alert>
         )}
+
+        {/* Clear/Reset Button - Only show when there's content to clear */}
+        {(generatedEmail || generatedSubject || profileData || recipientEmail) && (
+          <Button
+            onClick={clearAll}
+            variant="subtle"
+            size="sm"
+            color="gray"
+            style={{ alignSelf: 'center', marginTop: '1rem' }}
+          >
+            🗑️ Clear All & Start Over
+          </Button>
+        )}
+
         <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
       </Stack>
     </Paper>

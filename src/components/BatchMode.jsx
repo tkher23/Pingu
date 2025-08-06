@@ -117,18 +117,12 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
         newUrls[emptyIndex] = currentUrl;
         setUrls(newUrls);
         
-        // Add a new empty field if we're under the limit
-        if (urls.length < 15) {
-          setUrls([...newUrls, '']);
-        }
-      } else if (urls.length < 15) {
+        // Add a new empty field
+        setUrls([...newUrls, '']);
+      } else {
         // If no empty fields, add a new one with the URL and then another empty one
         const newUrls = [...urls, currentUrl];
-        if (newUrls.length < 15) {
-          setUrls([...newUrls, '']);
-        } else {
-          setUrls(newUrls);
-        }
+        setUrls([...newUrls, '']);
       }
     } else {
       // If not on LinkedIn profile, show error
@@ -309,7 +303,9 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
           setProcessingStatus('Complete!');
           const profilesWithSendFlag = result.profiles.map(profile => ({
             ...profile,
-            shouldSend: true // Initially all emails are selected for sending
+            shouldSend: true, // Initially all emails are selected for sending
+            // Auto-populate email if Apollo found one
+            recipient_email: profile.apollo_email && profile.apollo_found ? profile.apollo_email : ''
           }));
           setResults(profilesWithSendFlag);
           setCurrentEmailIndex(0);
@@ -492,13 +488,27 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
 
         {/* Description */}
         <Text size="sm" color="dimmed">
-          Process up to 15 LinkedIn profiles at once. Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture them quickly, or manually enter URLs in the fields below.
+          Process up to 10 LinkedIn profiles at once. Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture them quickly, or manually enter URLs in the fields below.
         </Text>
 
         {/* URL Input Section */}
         {!results.length && (
           <Stack spacing="sm">
-            {/* Company Info Section */}
+            {/* Add LinkedIn Button - First */}
+            <Button
+              variant="light"
+              onClick={addUrlField}
+              size="md"
+              style={{
+                background: '#0077b5',
+                border: 'none',
+                color: 'white'
+              }}
+            >
+              ➕ Add Current LinkedIn Profile
+            </Button>
+
+            {/* Company Info Section - Second */}
             <Stack spacing="sm">
               <Button
                 variant={showCompanyInfo ? "filled" : "light"}
@@ -507,7 +517,7 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
                 onClick={() => setShowCompanyInfo(!showCompanyInfo)}
                 style={{ alignSelf: 'flex-start' }}
               >
-                {showCompanyInfo ? '📄 Hide Company Info' : '📄 Add Company Info'}
+                {showCompanyInfo ? '📄 Hide Company Info' : '📄 (Optional) Add Company Info'}
               </Button>
               
               {showCompanyInfo && (
@@ -530,100 +540,93 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
               )}
             </Stack>
 
-            <Group position="apart">
-              <Text weight={600} size="sm">LinkedIn Profile URLs</Text>
-              <Text size="xs" color="dimmed">{urls.length}/15 URLs</Text>
-            </Group>
-            
-            {urls.map((url, index) => (
-              <Stack key={index} spacing="xs">
-                <Group spacing="xs" align="flex-end">
-                  <TextInput
-                    placeholder="https://linkedin.com/in/profile-name"
-                    value={url}
-                    onChange={(e) => updateUrl(index, e.target.value)}
-                    style={{ flex: 1 }}
-                    size="sm"
-                    styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14' } }}
-                  />
-                  {urls.length > 1 && (
-                    <Button
-                      color="red" 
-                      onClick={() => removeUrlField(index)}
-                      size="xs"
-                      variant="light"
-                      style={{ minWidth: 30, padding: '4px 8px' }}
-                    >
-                      ✕
-                    </Button>
-                  )}
+            {/* Process Button - Third */}
+            {validateUrls().length > 0 && (
+              <Stack spacing="xs">
+                <Text size="xs" color="dimmed" style={{ textAlign: 'center' }}>
+                  Cost: {validateUrls().length * 3} credits ({validateUrls().length} profiles × 3 credits each)
+                </Text>
+                <Button
+                  onClick={startBatchProcessing}
+                  disabled={isProcessing || validateUrls().length === 0}
+                  loading={isProcessing}
+                  size="md"
+                  style={{
+                    background: isProcessing ? '#ccc' : '#7c3aed',
+                    border: 'none',
+                    color: 'white'
+                  }}
+                >
+                  {isProcessing ? 'Processing...' : `🚀 Process ${validateUrls().length} Profiles`}
+                </Button>
+              </Stack>
+            )}
+
+            {/* LinkedIn URLs Section - Fourth */}
+            {urls.some(url => url.trim()) && (
+              <>
+                <Group position="apart">
+                  <Text weight={600} size="sm">LinkedIn Profile URLs</Text>
+                  <Text size="xs" color="dimmed">{urls.length} URLs</Text>
                 </Group>
                 
-                {/* Additional Info for this URL */}
-                <Stack spacing="xs" ml="sm">
-                  <Button
-                    variant={urlAdditionalInfo[`show_${index}`] ? "filled" : "light"}
-                    color="orange"
-                    size="xs"
-                    onClick={() => toggleUrlAdditionalInfo(index)}
-                    style={{ alignSelf: 'flex-start' }}
-                  >
-                    {urlAdditionalInfo[`show_${index}`] ? '👤 Hide Additional Info' : '👤 Add Additional Info'}
-                  </Button>
-                  
-                  {urlAdditionalInfo[`show_${index}`] && (
-                    <Textarea
-                      placeholder="Enter specific information about this recipient (background, interests, recent achievements, etc.)..."
-                      value={urlAdditionalInfo[index] || ''}
-                      onChange={(e) => updateUrlAdditionalInfo(index, e.target.value)}
-                      minRows={2}
-                      maxRows={6}
-                      radius="md"
-                      size="xs"
-                      autosize
-                      styles={{ 
-                        input: { background: '#fff4e6', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none', fontSize: '12px' }, 
-                      }}
-                      classNames={{ input: 'custom-input' }}
-                    />
-                  )}
-                </Stack>
-              </Stack>
-            ))}
-            
-            {urls.length < 15 && (
-              <Button
-                variant="light"
-                onClick={addUrlField}
-                size="sm"
-              >
-                ➕ Add Recipient
-              </Button>
+                {urls.map((url, index) => (
+                  <Stack key={index} spacing="xs">
+                    <Group spacing="xs" align="flex-end">
+                      <TextInput
+                        placeholder="https://linkedin.com/in/profile-name"
+                        value={url}
+                        onChange={(e) => updateUrl(index, e.target.value)}
+                        style={{ flex: 1 }}
+                        size="sm"
+                        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14' } }}
+                      />
+                      {urls.length > 1 && (
+                        <Button
+                          color="red" 
+                          onClick={() => removeUrlField(index)}
+                          size="xs"
+                          variant="light"
+                          style={{ minWidth: 30, padding: '4px 8px' }}
+                        >
+                          ✕
+                        </Button>
+                      )}
+                    </Group>
+                    
+                    {/* Additional Info for this URL */}
+                    <Stack spacing="xs" ml="sm">
+                      <Button
+                        variant={urlAdditionalInfo[`show_${index}`] ? "filled" : "light"}
+                        color="orange"
+                        size="xs"
+                        onClick={() => toggleUrlAdditionalInfo(index)}
+                        style={{ alignSelf: 'flex-start' }}
+                      >
+                        {urlAdditionalInfo[`show_${index}`] ? '👤 Hide Additional Info' : '👤 (Optional) Add Additional Info'}
+                      </Button>
+                      
+                      {urlAdditionalInfo[`show_${index}`] && (
+                        <Textarea
+                          placeholder="Enter specific information about this recipient (background, interests, recent achievements, etc.)..."
+                          value={urlAdditionalInfo[index] || ''}
+                          onChange={(e) => updateUrlAdditionalInfo(index, e.target.value)}
+                          minRows={2}
+                          maxRows={6}
+                          radius="md"
+                          size="xs"
+                          autosize
+                          styles={{ 
+                            input: { background: '#fff4e6', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none', fontSize: '12px' }, 
+                          }}
+                          classNames={{ input: 'custom-input' }}
+                        />
+                      )}
+                    </Stack>
+                  </Stack>
+                ))}
+              </>
             )}
-          </Stack>
-        )}
-
-        {/* Process Button */}
-        {!results.length && (
-          <Stack spacing="xs">
-            {validateUrls().length > 0 && (
-              <Text size="xs" color="dimmed" style={{ textAlign: 'center' }}>
-                Cost: {validateUrls().length * 3} credits ({validateUrls().length} profiles × 3 credits each)
-              </Text>
-            )}
-            <Button
-              onClick={startBatchProcessing}
-              disabled={isProcessing || validateUrls().length === 0 || (validateUrls().length * 3) > credits}
-              loading={isProcessing}
-              size="md"
-              style={{
-                background: isProcessing ? '#ccc' : '#7c3aed',
-                border: 'none',
-                color: 'white'
-              }}
-            >
-              {isProcessing ? 'Processing...' : `🚀 Process ${validateUrls().length} Profiles`}
-            </Button>
           </Stack>
         )}
 
@@ -708,6 +711,13 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
                   styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
                   classNames={{ input: 'custom-input' }}
                 />
+                
+                {/* Apollo Email Status */}
+                {currentEmail.apollo_found && (
+                  <Alert color="green" variant="light" radius="md" size="sm">
+                    📧 Email auto-filled using Apollo People Search
+                  </Alert>
+                )}
 
                 {/* Subject */}
                 <TextInput 
