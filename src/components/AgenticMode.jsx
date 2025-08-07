@@ -11,7 +11,8 @@ import {
   Alert,
   Badge,
   Box,
-  Notification
+  Notification,
+  Modal
 } from '@mantine/core';
 import { API_BASE_URL } from '../utils/constants';
 import useGmailSender from '../hooks/useGmailSender';
@@ -33,6 +34,7 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
   const [companyInfo, setCompanyInfo] = useState('');
   const [showRecipientBio, setShowRecipientBio] = useState(false);
   const [recipientBio, setRecipientBio] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Restore from localStorage on mount
   useEffect(() => {
@@ -76,6 +78,18 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
   useEffect(() => { localStorage.setItem('am_recipientBio', recipientBio); }, [recipientBio]);
   useEffect(() => { localStorage.setItem('am_showRecipientBio', showRecipientBio.toString()); }, [showRecipientBio]);
   
+  // Check for first-time onboarding
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeenAgenticOnboarding')) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenAgenticOnboarding', 'true');
+  };
+  
   // Persist scraping state to localStorage
   useEffect(() => { 
     if (jobId) {
@@ -104,10 +118,6 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
       // Get current tab URL
       const url = await getCurrentTabUrl();
       setCurrentUrl(url);
-      
-      if (!url.includes('linkedin.com/in/')) {
-        throw new Error('Please navigate to a LinkedIn profile page first');
-      }
       
       setScrapingStatus('Starting LinkedIn profile scrape...');
       
@@ -161,23 +171,18 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
   };
 
   const pollForResults = async (jobId, token, companyInfo = '', recipientBio = '') => {
-    const maxAttempts = 30; // 60 seconds max (2s intervals)
-    let attempts = 0;
-    
     const poll = async () => {
       try {
-        attempts++;
-        
-        if (attempts > maxAttempts) {
-          throw new Error('Scraping timeout. Please try again.');
-        }
-        
-        const encodedCompanyInfo = encodeURIComponent(companyInfo);
-        const encodedRecipientBio = encodeURIComponent(recipientBio);
-        const response = await fetch(`${API_BASE_URL}/api/scrape-result/${jobId}?company_info=${encodedCompanyInfo}&recipient_bio=${encodedRecipientBio}`, {
+        const response = await fetch(`${API_BASE_URL}/api/scrape-result/${jobId}`, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            company_info: companyInfo,
+            recipient_bio: recipientBio
+          })
         });
         
         const result = await response.json();
@@ -187,7 +192,9 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
         }
         
         if (result.status === 'pending') {
-          setScrapingStatus(`Scraping in progress... (${attempts}/${maxAttempts})`);
+          // Update status with backend-provided information
+          const statusMessage = `Scraping in progress... (${result.checks_remaining || 0} checks remaining, ${result.elapsed_minutes || 0}/${result.timeout_minutes || 10} min)`;
+          setScrapingStatus(statusMessage);
           setTimeout(poll, 2000); // Poll every 2 seconds
           return;
         }
@@ -305,7 +312,20 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
   };
 
   return (
-    <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+    <>
+      <Modal
+        opened={showOnboarding}
+        onClose={handleCloseOnboarding}
+        title="Agentic Mode"
+        centered
+        overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
+      >
+        <Text size="md" mb="md">
+          Welcome to Agentic Mode! Here, Pingu automatically scrapes the LinkedIn profile you're currently viewing, finds the recipient's email address and generates a highly personalized email. Simply navigate to any LinkedIn profile page, then click "Scrape & Generate Email" to let Pingu do the heavy lifting. You can also add company information and recipient bio for even more personalization... And Send!
+        </Text>
+        <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
+      </Modal>
+      <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
       <Stack spacing="md">
         {/* Header */}
         <Group position="apart" align="center">
@@ -334,7 +354,7 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
         {/* Scrape Button */}
         <Button
           onClick={startLinkedInScrape}
-          disabled={isScrapingInProgress || credits < 1}
+          disabled={isScrapingInProgress}
           loading={isScrapingInProgress}
           size="md"
           style={{
@@ -343,7 +363,7 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
             color: 'white'
           }}
         >
-          {isScrapingInProgress ? 'Scraping...' : '� Scrape LinkedIn Profile'}
+          {isScrapingInProgress ? 'Scraping...' : '🤖 Scrape LinkedIn Profile'}
         </Button>
 
         {/* Company Info Section */}
@@ -559,5 +579,6 @@ export default function AgenticMode({ credits, creditsLoading, creditsError, fet
         <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
       </Stack>
     </Paper>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, Paper, Box, Button, TextInput, Group, Badge, Loader, Notification, Stack, Text } from '@mantine/core';
 import SimpleEmailForm from './SimpleEmailForm';
-import AdvancedEmailForm from './AdvancedEmailForm';
 import AgenticMode from './AgenticMode';
 import BatchMode from './BatchMode';
 import Settings from './Settings';
@@ -141,7 +140,7 @@ export default function MainUI() {
             </Button>
           </Group>
           <Tabs
-            defaultValue="simple"
+            defaultValue="agentic"
             variant="pills"
             radius="md"
             color="blue"
@@ -169,22 +168,6 @@ export default function MainUI() {
                 }}
               >
                 <Tabs.Tab
-                  value="simple"
-                  style={{ ...blueButtonStyle, ...(hovered === 'simple' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
-                  onMouseEnter={() => setHovered('simple')}
-                  onMouseLeave={() => setHovered(false)}
-                >
-                  Simple Email
-                </Tabs.Tab>
-                <Tabs.Tab
-                  value="advanced"
-                  style={{ ...blueButtonStyle, ...(hovered === 'advanced' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
-                  onMouseEnter={() => setHovered('advanced')}
-                  onMouseLeave={() => setHovered(false)}
-                >
-                  Advanced Email
-                </Tabs.Tab>
-                <Tabs.Tab
                   value="agentic"
                   style={{ ...blueButtonStyle, ...(hovered === 'agentic' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
                   onMouseEnter={() => setHovered('agentic')}
@@ -199,6 +182,14 @@ export default function MainUI() {
                   onMouseLeave={() => setHovered(false)}
                 >
                   Batch Mode
+                </Tabs.Tab>
+                <Tabs.Tab
+                  value="simple"
+                  style={{ ...blueButtonStyle, ...(hovered === 'simple' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
+                  onMouseEnter={() => setHovered('simple')}
+                  onMouseLeave={() => setHovered(false)}
+                >
+                  Simple Email
                 </Tabs.Tab>
                 <Tabs.Tab
                   value="subscriptions"
@@ -218,22 +209,6 @@ export default function MainUI() {
                 </Tabs.Tab>
               </Tabs.List>
             </div>
-            <Tabs.Panel value="simple" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
-              <SimpleEmailForm 
-                credits={credits}
-                creditsLoading={creditsLoading}
-                creditsError={creditsError}
-                fetchCredits={fetchCredits}
-              />
-            </Tabs.Panel>
-            <Tabs.Panel value="advanced" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
-              <AdvancedEmailForm 
-                credits={credits}
-                creditsLoading={creditsLoading}
-                creditsError={creditsError}
-                fetchCredits={fetchCredits}
-              />
-            </Tabs.Panel>
             <Tabs.Panel value="agentic" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
               <AgenticMode 
                 credits={credits}
@@ -244,6 +219,14 @@ export default function MainUI() {
             </Tabs.Panel>
             <Tabs.Panel value="batch" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
               <BatchMode 
+                credits={credits}
+                creditsLoading={creditsLoading}
+                creditsError={creditsError}
+                fetchCredits={fetchCredits}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="simple" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
+              <SimpleEmailForm 
                 credits={credits}
                 creditsLoading={creditsLoading}
                 creditsError={creditsError}

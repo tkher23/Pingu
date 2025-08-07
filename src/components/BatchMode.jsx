@@ -35,6 +35,7 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
   const [showCompanyInfo, setShowCompanyInfo] = useState(false);
   const [companyInfo, setCompanyInfo] = useState('');
   const [urlAdditionalInfo, setUrlAdditionalInfo] = useState({}); // Object to store additional info per URL index
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Restore from localStorage on mount
   useEffect(() => {
@@ -106,6 +107,18 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
   useEffect(() => { localStorage.setItem('bm_showCompanyInfo', showCompanyInfo.toString()); }, [showCompanyInfo]);
   useEffect(() => { localStorage.setItem('bm_urlAdditionalInfo', JSON.stringify(urlAdditionalInfo)); }, [urlAdditionalInfo]);
 
+  // Check for first-time onboarding
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeenBatchOnboarding')) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenBatchOnboarding', 'true');
+  };
+
   const addUrlField = async () => {
     // Get current tab URL
     const currentUrl = await getCurrentTabUrl();
@@ -125,11 +138,8 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
         setUrls([...newUrls, '']);
       }
     } else {
-      // If not on LinkedIn profile, show error
-      if (currentUrl) {
-        setError('Please navigate to a LinkedIn profile page to capture the URL.');
-        setTimeout(() => setError(''), 3000);
-      }
+      // If not on LinkedIn profile, just add an empty field for manual entry
+      setUrls([...urls, '']);
     }
   };
 
@@ -189,28 +199,11 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
     }));
   };
 
-  const validateUrls = () => {
-    const validUrls = urls.filter(url => url.trim() && url.includes('linkedin.com/in/'));
-    return validUrls;
-  };
-
   const startBatchProcessing = async () => {
     try {
       setError('');
       setIsProcessing(true);
-      setProcessingStatus('Validating LinkedIn URLs...');
-      
-      const validUrls = validateUrls();
-      if (validUrls.length === 0) {
-        throw new Error('Please enter at least one valid LinkedIn profile URL');
-      }
-
-      const requiredCredits = validUrls.length * 3;
-      if (requiredCredits > credits) {
-        throw new Error(`Insufficient credits. Need ${requiredCredits}, have ${credits}`);
-      }
-
-      setProcessingStatus('Starting batch LinkedIn scraping...');
+      setProcessingStatus('Starting batch processing...');
       
       // Get auth token
       const token = await new Promise((resolve) => {
@@ -223,16 +216,14 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
         throw new Error('Please log in first');
       }
       
-      // Trigger batch scraping job with additional info
-      const urlsWithInfo = validUrls.map((url) => {
-        // Find the original index of this URL in the urls array
-        const originalIndex = urls.findIndex(u => u === url);
-        return {
-          url: url,
-          additional_info: urlAdditionalInfo[originalIndex] || '',
+      // Send all URLs to backend - let backend handle all validation
+      const urlsWithInfo = urls
+        .filter(url => url.trim()) // Only filter out completely empty URLs
+        .map((url, index) => ({
+          url: url.trim(),
+          additional_info: urlAdditionalInfo[index] || '',
           company_info: companyInfo
-        };
-      });
+        }));
 
       const response = await fetch(`${API_BASE_URL}/api/scrape-linkedin-batch`, {
         method: 'POST',
@@ -251,7 +242,7 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
       
       const newJobId = result.job_id;
       setJobId(newJobId);
-      setProcessingStatus(`Processing ${validUrls.length} LinkedIn profiles...`);
+      setProcessingStatus(`Processing ${result.url_count || urlsWithInfo.length} LinkedIn profiles...`);
       
       // Start polling for results
       pollForBatchResults(newJobId, token);
@@ -270,17 +261,8 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
   };
 
   const pollForBatchResults = async (jobId, token) => {
-    const maxAttempts = 30; // 60 seconds max
-    let attempts = 0;
-    
     const poll = async () => {
       try {
-        attempts++;
-        
-        if (attempts > maxAttempts) {
-          throw new Error('Processing timeout. Please try again.');
-        }
-        
         const response = await fetch(`${API_BASE_URL}/api/scrape-batch-result/${jobId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -294,7 +276,9 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
         }
         
         if (result.status === 'pending') {
-          setProcessingStatus(`Processing... (${attempts}/${maxAttempts})`);
+          // Update status with backend-provided information
+          const statusMessage = `Processing... (${result.checks_remaining || 0} checks remaining, ${result.elapsed_minutes || 0}/${result.timeout_minutes || 10} min)`;
+          setProcessingStatus(statusMessage);
           setTimeout(poll, 2000);
           return;
         }
@@ -475,7 +459,20 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
   const currentEmail = results[currentEmailIndex];
 
   return (
-    <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+    <>
+      <Modal
+        opened={showOnboarding}
+        onClose={handleCloseOnboarding}
+        title="Batch Mode"
+        centered
+        overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
+      >
+        <Text size="md" mb="md">
+          Welcome to Batch Mode! Here, Pingu creates multiple emails at once. Simply add LinkedIn profiles (click "Add Current LinkedIn Profile"). Optionally add company information and recipient-specific details, then hit "Process LinkedIn Profiles" to generate personalized emails for everyone and find their addresses. Perfect for large outreach campaigns!
+        </Text>
+        <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
+      </Modal>
+      <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
       <Stack spacing="md">
         {/* Header */}
         <Group position="apart" align="center">
@@ -488,7 +485,7 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
 
         {/* Description */}
         <Text size="sm" color="dimmed">
-          Process up to 10 LinkedIn profiles at once. Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture them quickly, or manually enter URLs in the fields below.
+          Process multiple LinkedIn profiles at once. Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture them quickly, or manually enter URLs in the fields below.
         </Text>
 
         {/* URL Input Section */}
@@ -541,25 +538,20 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
             </Stack>
 
             {/* Process Button - Third */}
-            {validateUrls().length > 0 && (
-              <Stack spacing="xs">
-                <Text size="xs" color="dimmed" style={{ textAlign: 'center' }}>
-                  Cost: {validateUrls().length * 3} credits ({validateUrls().length} profiles × 3 credits each)
-                </Text>
-                <Button
-                  onClick={startBatchProcessing}
-                  disabled={isProcessing || validateUrls().length === 0}
-                  loading={isProcessing}
-                  size="md"
-                  style={{
-                    background: isProcessing ? '#ccc' : '#7c3aed',
-                    border: 'none',
-                    color: 'white'
-                  }}
-                >
-                  {isProcessing ? 'Processing...' : `🚀 Process ${validateUrls().length} Profiles`}
-                </Button>
-              </Stack>
+            {urls.some(url => url.trim()) && (
+              <Button
+                onClick={startBatchProcessing}
+                disabled={isProcessing}
+                loading={isProcessing}
+                size="md"
+                style={{
+                  background: isProcessing ? '#ccc' : '#7c3aed',
+                  border: 'none',
+                  color: 'white'
+                }}
+              >
+                {isProcessing ? 'Processing...' : `🚀 Process LinkedIn Profiles`}
+              </Button>
             )}
 
             {/* LinkedIn URLs Section - Fourth */}
@@ -772,7 +764,7 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
                 color="teal"
                 style={{ fontWeight: 600 }}
               >
-                📧 Send Selected Emails ({getSelectedEmailsCount()})
+                📧 Send ({getSelectedEmailsCount()}) Selected Emails
               </Button>
               
               <Button
@@ -790,5 +782,6 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
         <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
       </Stack>
     </Paper>
+    </>
   );
 }

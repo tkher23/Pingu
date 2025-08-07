@@ -106,15 +106,6 @@ const Settings = () => {
         />
         <Group position="right">
           <Button
-            onClick={() => {
-              chrome.storage.local.set({supabaseToken: 'test_token_local_dev'});
-              alert('Test token set! You can now test Agentic Mode.');
-            }}
-            style={{ background: '#ff6b6b', color: 'white', marginRight: 10 }}
-          >
-            Set Test Token
-          </Button>
-          <Button
             onClick={handleSave}
             disabled={loading}
             style={{ ...blueButtonStyle, ...(hovered ? blueButtonHover : {}) }}
