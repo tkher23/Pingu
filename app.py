@@ -822,10 +822,10 @@ def trigger_linkedin_batch_scrape():
         if len(linkedin_urls) > 10:  # Limit batch size
             return jsonify({"error": "Maximum 10 URLs per batch"}), 400
 
-        # Check user credits (3 credits per URL for BrightData processing)
+        # Check user credits (2 credits per URL for BrightData processing)
         credits = get_user_credits(user_id)
-        if credits < len(linkedin_urls) * 3:
-            return jsonify({"error": f"Insufficient credits. Need {len(linkedin_urls) * 3}, have {credits}"}), 402
+        if credits < len(linkedin_urls) * 2:
+            return jsonify({"error": f"Insufficient credits. Need {len(linkedin_urls) * 2}, have {credits}"}), 402
 
         # Validate all LinkedIn URLs
         invalid_urls = []
@@ -840,7 +840,11 @@ def trigger_linkedin_batch_scrape():
         batch_metadata = {
             'urls_with_info': urls_with_info,
             'original_linkedin_urls': linkedin_urls,  # Store original URLs for Apollo enrichment
-            'user_id': user_id
+            'user_id': user_id,
+            'started_at': datetime.utcnow().isoformat(),
+            'status_checks': 0,
+            'max_status_checks': 30,  # Maximum number of status checks allowed
+            'timeout_minutes': 10     # Job timeout in minutes
         }
 
         # Trigger BrightData batch scraping job
@@ -874,8 +878,8 @@ def trigger_linkedin_batch_scrape():
         # Store batch metadata for this job
         batch_job_metadata[job_id] = batch_metadata
 
-        # Decrement user credits for all URLs (3 credits per profile)
-        decrement_user_credits(user_id, len(linkedin_urls) * 3)
+        # Decrement user credits for all URLs (2 credits per profile)
+        decrement_user_credits(user_id, len(linkedin_urls) * 2)
         
         return jsonify({
             "job_id": job_id, 
@@ -902,10 +906,10 @@ def trigger_linkedin_scrape():
         if not user_id:
             return jsonify({"error": "Invalid token"}), 401
 
-        # Check user credits (3 credits for BrightData processing)
+        # Check user credits (2 credits for BrightData processing)
         credits = get_user_credits(user_id)
-        if credits < 3:
-            return jsonify({"error": "Insufficient credits. Need 3 credits for LinkedIn profile processing"}), 402
+        if credits < 2:
+            return jsonify({"error": "Insufficient credits. Need 2 credits for LinkedIn profile processing"}), 402
 
         # Get URL from request
         data = request.get_json()
@@ -949,11 +953,15 @@ def trigger_linkedin_scrape():
         # Store metadata for this single job - IMPORTANT: Store original LinkedIn URL
         batch_job_metadata[job_id] = {
             'original_linkedin_url': linkedin_url,
-            'user_id': user_id
+            'user_id': user_id,
+            'started_at': datetime.utcnow().isoformat(),
+            'status_checks': 0,
+            'max_status_checks': 30,  # Maximum number of status checks allowed
+            'timeout_minutes': 10     # Job timeout in minutes
         }
 
-        # Decrement user credits since we started the job (3 credits for BrightData processing)
-        decrement_user_credits(user_id, 3)
+        # Decrement user credits since we started the job (2 credits for BrightData processing)
+        decrement_user_credits(user_id, 2)
         
         return jsonify({"job_id": job_id, "status": "started"}), 200
 
@@ -974,6 +982,44 @@ def get_batch_scrape_result(job_id):
         user_id = get_user_id_from_token(token)
         if not user_id:
             return jsonify({"error": "Invalid token"}), 401
+
+        # Get stored metadata for this batch job
+        batch_metadata = batch_job_metadata.get(job_id, {})
+        if not batch_metadata:
+            return jsonify({"error": "Job not found or expired"}), 404
+        
+        # Verify job belongs to this user
+        if batch_metadata.get('user_id') != user_id:
+            return jsonify({"error": "Unauthorized access to job"}), 403
+        
+        # Check job timeout (only if we have started_at)
+        started_at_str = batch_metadata.get('started_at')
+        timeout_minutes = batch_metadata.get('timeout_minutes', 10)
+        elapsed = None
+        if started_at_str:
+            try:
+                started_at = datetime.fromisoformat(started_at_str)
+                elapsed = datetime.utcnow() - started_at
+                if elapsed.total_seconds() > (timeout_minutes * 60):
+                    # Job has timed out - clean up and return error
+                    if job_id in batch_job_metadata:
+                        del batch_job_metadata[job_id]
+                    return jsonify({"error": f"Job timed out after {timeout_minutes} minutes. Please try again."}), 408
+            except Exception:
+                # If datetime parsing fails, don't timeout
+                elapsed = None
+        
+        # Check status check limits
+        status_checks = batch_metadata.get('status_checks', 0)
+        max_status_checks = batch_metadata.get('max_status_checks', 30)
+        if status_checks >= max_status_checks:
+            # Too many status checks - clean up and return error
+            if job_id in batch_job_metadata:
+                del batch_job_metadata[job_id]
+            return jsonify({"error": f"Maximum status checks ({max_status_checks}) exceeded. Please try again."}), 429
+        
+        # Increment status check counter
+        batch_job_metadata[job_id]['status_checks'] = status_checks + 1
 
         # Check BrightData job status
         bright_data_url = f"https://api.brightdata.com/datasets/v3/snapshot/{job_id}"
@@ -1006,7 +1052,12 @@ def get_batch_scrape_result(job_id):
             status = result.get("status")
             
             if status != "completed":
-                return jsonify({"status": "pending"}), 200
+                return jsonify({
+                    "status": "pending",
+                    "checks_remaining": max_status_checks - status_checks,
+                    "elapsed_minutes": round(elapsed.total_seconds() / 60, 1) if started_at_str else 0,
+                    "timeout_minutes": timeout_minutes
+                }), 200
 
             # Extract profile data from results
             if not result.get("data") or len(result["data"]) == 0:
@@ -1037,8 +1088,7 @@ def get_batch_scrape_result(job_id):
                 "default_interest": user_settings.get("default_interest", "")
             }
         
-        # Get stored metadata for this batch job
-        batch_metadata = batch_job_metadata.get(job_id, {})
+        # Get batch metadata from validation above
         urls_with_info = batch_metadata.get('urls_with_info', [])
         original_linkedin_urls = batch_metadata.get('original_linkedin_urls', [])
         
@@ -1054,7 +1104,33 @@ def get_batch_scrape_result(job_id):
         
         # Parse all profiles first
         parsed_profiles = []
-        for profile_data in profiles_data:
+        skipped_profiles = []
+        
+        for i, profile_data in enumerate(profiles_data):
+            # Validate profile size before processing
+            is_valid, validation_message = validate_profile_size(profile_data)
+            
+            if not is_valid:
+                log_to_file(f"❌ Skipping profile {i+1}: {validation_message}")
+                skipped_profiles.append({
+                    "index": i,
+                    "url": profile_data.get("url", "Unknown"),
+                    "reason": validation_message
+                })
+                # Add empty parsed profile to maintain index alignment
+                parsed_profiles.append({
+                    "name": "Profile Too Large",
+                    "headline": "Could not process",
+                    "about": validation_message,
+                    "experiences": [],
+                    "education": [],
+                    "projects": [],
+                    "publications": [],
+                    "current_company": "",
+                    "current_title": ""
+                })
+                continue
+            
             parsed_profile = parse_brightdata_linkedin(profile_data)
             parsed_profiles.append(parsed_profile)
         
@@ -1125,17 +1201,27 @@ def get_batch_scrape_result(job_id):
         if job_id in batch_job_metadata:
             del batch_job_metadata[job_id]
         
-        return jsonify({
+        # Prepare response with information about skipped profiles
+        response_data = {
             "status": "done",
             "profiles": processed_profiles,
-            "count": len(processed_profiles)
-        }), 200
+            "count": len(processed_profiles),
+            "total_requested": len(profiles_data)
+        }
+        
+        # Add information about skipped profiles if any
+        if skipped_profiles:
+            response_data["skipped_profiles"] = skipped_profiles
+            response_data["skipped_count"] = len(skipped_profiles)
+            log_to_file(f"⚠️ Batch processing completed with {len(skipped_profiles)} skipped profiles")
+        
+        return jsonify(response_data), 200
 
     except Exception as e:
         log_to_file(f"Error in get_batch_scrape_result: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
-@app.route('/api/scrape-result/<job_id>', methods=['GET'])
+@app.route('/api/scrape-result/<job_id>', methods=['POST'])
 def get_scrape_result(job_id):
     """Poll for BrightData scraping results and generate email when complete"""
     try:
@@ -1149,9 +1235,48 @@ def get_scrape_result(job_id):
         if not user_id:
             return jsonify({"error": "Invalid token"}), 401
 
-        # Get company_info and recipient_bio from query parameters
-        company_info = request.args.get('company_info', '')
-        recipient_bio = request.args.get('recipient_bio', '')
+        # Get stored metadata for this job
+        job_metadata = batch_job_metadata.get(job_id, {})
+        if not job_metadata:
+            return jsonify({"error": "Job not found or expired"}), 404
+        
+        # Verify job belongs to this user
+        if job_metadata.get('user_id') != user_id:
+            return jsonify({"error": "Unauthorized access to job"}), 403
+        
+        # Check job timeout (optimized)
+        started_at_str = job_metadata.get('started_at')
+        timeout_minutes = job_metadata.get('timeout_minutes', 10)
+        elapsed = None
+        if started_at_str:
+            try:
+                started_at = datetime.fromisoformat(started_at_str)
+                elapsed = datetime.utcnow() - started_at
+                if elapsed.total_seconds() > (timeout_minutes * 60):
+                    # Job has timed out - clean up and return error
+                    if job_id in batch_job_metadata:
+                        del batch_job_metadata[job_id]
+                    return jsonify({"error": f"Job timed out after {timeout_minutes} minutes. Please try again."}), 408
+            except Exception:
+                # If datetime parsing fails, don't timeout
+                elapsed = None
+        
+        # Check status check limits
+        status_checks = job_metadata.get('status_checks', 0)
+        max_status_checks = job_metadata.get('max_status_checks', 30)
+        if status_checks >= max_status_checks:
+            # Too many status checks - clean up and return error
+            if job_id in batch_job_metadata:
+                del batch_job_metadata[job_id]
+            return jsonify({"error": f"Maximum status checks ({max_status_checks}) exceeded. Please try again."}), 429
+        
+        # Increment status check counter
+        batch_job_metadata[job_id]['status_checks'] = status_checks + 1
+
+        # Get company_info and recipient_bio from JSON body
+        data = request.get_json() or {}
+        company_info = data.get('company_info', '')
+        recipient_bio = data.get('recipient_bio', '')
 
         # Check BrightData job status
         bright_data_url = f"https://api.brightdata.com/datasets/v3/snapshot/{job_id}"
@@ -1184,7 +1309,12 @@ def get_scrape_result(job_id):
             status = result.get("status")
             
             if status != "completed":
-                return jsonify({"status": "pending"}), 200
+                return jsonify({
+                    "status": "pending",
+                    "checks_remaining": max_status_checks - status_checks,
+                    "elapsed_minutes": round(elapsed.total_seconds() / 60, 1) if started_at_str else 0,
+                    "timeout_minutes": timeout_minutes
+                }), 200
 
             # Extract profile data from results
             if not result.get("data") or len(result["data"]) == 0:
@@ -1195,11 +1325,17 @@ def get_scrape_result(job_id):
             log_to_file(f"Unexpected BrightData response type: {type(result)}")
             return jsonify({"error": "Unexpected response format"}), 500
         
+        # Validate profile size before processing
+        is_valid, validation_message = validate_profile_size(profile_data)
+        
+        if not is_valid:
+            log_to_file(f"❌ Single profile processing failed: {validation_message}")
+            return jsonify({"error": f"Profile too large to process: {validation_message}"}), 413  # 413 = Payload Too Large
+        
         # Parse the LinkedIn data into our format
         parsed_profile = parse_brightdata_linkedin(profile_data)
         
-        # Get stored metadata for this job to retrieve original LinkedIn URL
-        job_metadata = batch_job_metadata.get(job_id, {})
+        # Use job metadata from validation above
         original_linkedin_url = job_metadata.get('original_linkedin_url', '')
         
         log_to_file(f"🔗 Using ORIGINAL LinkedIn URL for Apollo: '{original_linkedin_url}'")
@@ -1276,13 +1412,29 @@ def get_scrape_result(job_id):
         return jsonify({"error": "Internal server error"}), 500
 
 def parse_brightdata_linkedin(profile_data):
-    """Parse BrightData LinkedIn response into structured format"""
+    """Parse BrightData LinkedIn response into structured format with size limits"""
     try:
+        # Define size limits to prevent performance issues
+        MAX_TEXT_LENGTH = 2000  # Maximum length for text fields like about/description
+        MAX_EXPERIENCES = 5     # Maximum number of experiences to process
+        MAX_EDUCATION = 3       # Maximum number of education entries
+        MAX_PROJECTS = 3        # Maximum number of projects
+        MAX_PUBLICATIONS = 2    # Maximum number of publications
+        MAX_DESCRIPTION_LENGTH = 300  # Max length for individual descriptions
+        
+        def truncate_text(text, max_length):
+            """Safely truncate text to max length"""
+            if not text or not isinstance(text, str):
+                return ""
+            if len(text) <= max_length:
+                return text
+            return text[:max_length].rsplit(' ', 1)[0] + "..."
+        
         parsed = {
-            "name": profile_data.get("name", ""),
-            "headline": profile_data.get("position", ""),  # BrightData uses 'position' not 'headline'
-            "about": profile_data.get("about", "") or "",  # Handle null values
-            "location": profile_data.get("location", ""),  # Keep location for other uses
+            "name": truncate_text(profile_data.get("name", ""), 100),
+            "headline": truncate_text(profile_data.get("position", ""), 200),
+            "about": truncate_text(profile_data.get("about", "") or "", MAX_TEXT_LENGTH),
+            "location": truncate_text(profile_data.get("location", ""), 100),
             # NOTE: linkedin_url is now stored in job metadata, not from BrightData response
             "experiences": [],
             "education": [],
@@ -1298,15 +1450,17 @@ def parse_brightdata_linkedin(profile_data):
         log_to_file(f"DEBUG: Experience type: {type(experience)}")
         
         if experience and isinstance(experience, list):
-            log_to_file(f"DEBUG: Processing {len(experience)} experiences")
-            for i, exp in enumerate(experience):
+            log_to_file(f"DEBUG: Processing {len(experience)} experiences (limiting to {MAX_EXPERIENCES})")
+            # Limit the number of experiences processed
+            limited_experiences = experience[:MAX_EXPERIENCES]
+            for i, exp in enumerate(limited_experiences):
                 log_to_file(f"DEBUG: Experience {i}: {exp}")
                 if isinstance(exp, dict):
                     exp_data = {
-                        "title": exp.get("title", ""),
-                        "company": exp.get("company", ""),
-                        "duration": exp.get("duration", ""),
-                        "description": exp.get("description", "")
+                        "title": truncate_text(exp.get("title", ""), 150),
+                        "company": truncate_text(exp.get("company", ""), 100),
+                        "duration": truncate_text(exp.get("duration", ""), 50),
+                        "description": truncate_text(exp.get("description", ""), MAX_DESCRIPTION_LENGTH)
                     }
                     parsed["experiences"].append(exp_data)
                     
@@ -1319,10 +1473,10 @@ def parse_brightdata_linkedin(profile_data):
             # Single experience object
             log_to_file(f"DEBUG: Processing single experience: {experience}")
             exp_data = {
-                "title": experience.get("title", ""),
-                "company": experience.get("company", ""),
-                "duration": experience.get("duration", ""),
-                "description": experience.get("description", "")
+                "title": truncate_text(experience.get("title", ""), 150),
+                "company": truncate_text(experience.get("company", ""), 100),
+                "duration": truncate_text(experience.get("duration", ""), 50),
+                "description": truncate_text(experience.get("description", ""), MAX_DESCRIPTION_LENGTH)
             }
             parsed["experiences"].append(exp_data)
             parsed["current_title"] = exp_data["title"]
@@ -1335,10 +1489,12 @@ def parse_brightdata_linkedin(profile_data):
         # Parse education - BrightData structure is different
         education = profile_data.get("education", [])
         if isinstance(education, list):
-            for edu in education:
+            # Limit the number of education entries processed
+            limited_education = education[:MAX_EDUCATION]
+            for edu in limited_education:
                 if isinstance(edu, dict):
                     parsed["education"].append({
-                        "school": edu.get("title", ""),  # BrightData uses 'title' for school name
+                        "school": truncate_text(edu.get("title", ""), 150),
                         "degree": "",  # Not provided in BrightData response
                         "field": "",   # Not provided in BrightData response
                         "years": f"{edu.get('start_year', '')}-{edu.get('end_year', '')}" if edu.get('start_year') or edu.get('end_year') else ""
@@ -1347,40 +1503,50 @@ def parse_brightdata_linkedin(profile_data):
         # Parse projects
         projects = profile_data.get("projects")
         if projects and isinstance(projects, list):
-            for project in projects[:3]:  # Limit to top 3 projects
+            # Limit the number of projects processed
+            limited_projects = projects[:MAX_PROJECTS]
+            for project in limited_projects:
                 if isinstance(project, dict):
                     parsed["projects"].append({
-                        "title": project.get("title", ""),
-                        "description": project.get("description", ""),
-                        "url": project.get("url", "")
+                        "title": truncate_text(project.get("title", ""), 100),
+                        "description": truncate_text(project.get("description", ""), MAX_DESCRIPTION_LENGTH),
+                        "url": truncate_text(project.get("url", ""), 200)
                     })
         elif projects and isinstance(projects, dict):
             # Single project object
             parsed["projects"].append({
-                "title": projects.get("title", ""),
-                "description": projects.get("description", ""),
-                "url": projects.get("url", "")
+                "title": truncate_text(projects.get("title", ""), 100),
+                "description": truncate_text(projects.get("description", ""), MAX_DESCRIPTION_LENGTH),
+                "url": truncate_text(projects.get("url", ""), 200)
             })
         
         # Parse publications
         publications = profile_data.get("publications")
         if publications and isinstance(publications, list):
-            for pub in publications[:3]:  # Limit to top 3 publications
+            # Limit the number of publications processed
+            limited_publications = publications[:MAX_PUBLICATIONS]
+            for pub in limited_publications:
                 if isinstance(pub, dict):
                     parsed["publications"].append({
-                        "title": pub.get("title", ""),
-                        "description": pub.get("description", ""),
-                        "url": pub.get("url", ""),
-                        "date": pub.get("date", "")
+                        "title": truncate_text(pub.get("title", ""), 150),
+                        "description": truncate_text(pub.get("description", ""), MAX_DESCRIPTION_LENGTH),
+                        "url": truncate_text(pub.get("url", ""), 200),
+                        "date": truncate_text(pub.get("date", ""), 50)
                     })
         elif publications and isinstance(publications, dict):
             # Single publication object
             parsed["publications"].append({
-                "title": publications.get("title", ""),
-                "description": publications.get("description", ""),
-                "url": publications.get("url", ""),
-                "date": publications.get("date", "")
+                "title": truncate_text(publications.get("title", ""), 150),
+                "description": truncate_text(publications.get("description", ""), MAX_DESCRIPTION_LENGTH),
+                "url": truncate_text(publications.get("url", ""), 200),
+                "date": truncate_text(publications.get("date", ""), 50)
             })
+        
+        # Log final profile size for monitoring
+        total_chars = len(str(parsed))
+        log_to_file(f"📊 Parsed profile total size: {total_chars} characters")
+        if total_chars > 10000:  # Warning threshold
+            log_to_file(f"⚠️ Large profile detected: {total_chars} chars for {parsed.get('name', 'Unknown')}")
         
         return parsed
         
@@ -1397,50 +1563,117 @@ def parse_brightdata_linkedin(profile_data):
             "current_title": ""
         }
 
-def format_profile_for_email(parsed_profile):
-    """Format parsed LinkedIn profile data for email generation"""
+def validate_profile_size(profile_data):
+    """Validate and potentially reject profiles that are too large to process efficiently"""
     try:
+        # Convert to string to measure size
+        profile_str = str(profile_data)
+        profile_size = len(profile_str)
+        
+        # Define size thresholds
+        MAX_RAW_PROFILE_SIZE = 50000  # 50KB raw profile data limit
+        WARNING_PROFILE_SIZE = 25000  # 25KB warning threshold
+        
+        log_to_file(f"📏 Profile validation - Raw size: {profile_size} characters")
+        
+        if profile_size > MAX_RAW_PROFILE_SIZE:
+            log_to_file(f"❌ Profile rejected - too large: {profile_size} chars (max: {MAX_RAW_PROFILE_SIZE})")
+            return False, f"Profile too large ({profile_size} chars) - may cause performance issues"
+        
+        if profile_size > WARNING_PROFILE_SIZE:
+            log_to_file(f"⚠️ Large profile detected: {profile_size} chars - will be heavily truncated")
+        
+        # Check for specific problematic fields
+        about_text = profile_data.get("about", "")
+        if about_text and len(about_text) > 10000:
+            log_to_file(f"⚠️ Very long 'about' section: {len(about_text)} chars - will be truncated")
+        
+        experience = profile_data.get("experience", [])
+        if isinstance(experience, list) and len(experience) > 20:
+            log_to_file(f"⚠️ Many experiences: {len(experience)} entries - will be limited to top 5")
+        
+        return True, "Profile size acceptable"
+        
+    except Exception as e:
+        log_to_file(f"Error validating profile size: {str(e)}")
+        # If we can't validate, allow processing but log the issue
+        return True, "Size validation failed but allowing processing"
+
+def format_profile_for_email(parsed_profile):
+    """Format parsed LinkedIn profile data for email generation with size limits"""
+    try:
+        # Define formatting limits to prevent extremely long emails
+        MAX_ABOUT_LENGTH = 800      # Maximum length for about section
+        MAX_DESCRIPTION_LENGTH = 150 # Maximum length for experience descriptions
+        MAX_TOTAL_EMAIL_LENGTH = 3000 # Maximum total formatted text length
+        
         formatted = f"Name: {parsed_profile['name']}\n"
-        formatted += f"Position: {parsed_profile['headline']}\n"  # Changed from Headline to Position
+        formatted += f"Position: {parsed_profile['headline']}\n"
         
+        # About section with length limit
         if parsed_profile['about']:
-            formatted += f"\nAbout:\n{parsed_profile['about']}\n"
+            about_text = parsed_profile['about']
+            if len(about_text) > MAX_ABOUT_LENGTH:
+                # Find a good breaking point near the limit
+                about_text = about_text[:MAX_ABOUT_LENGTH].rsplit('.', 1)[0] + "..."
+            formatted += f"\nAbout:\n{about_text}\n"
         
+        # Experience section - limit both number and description length
         if parsed_profile['experiences']:
             formatted += "\nExperience:\n"
-            for exp in parsed_profile['experiences'][:3]:  # Limit to top 3 experiences
+            for i, exp in enumerate(parsed_profile['experiences'][:3]):  # Top 3 experiences
                 formatted += f"• {exp['title']} at {exp['company']}"
                 if exp['duration']:
                     formatted += f" ({exp['duration']})"
                 formatted += "\n"
                 if exp['description']:
-                    formatted += f"  {exp['description'][:200]}...\n"
+                    desc = exp['description']
+                    if len(desc) > MAX_DESCRIPTION_LENGTH:
+                        desc = desc[:MAX_DESCRIPTION_LENGTH].rsplit(' ', 1)[0] + "..."
+                    formatted += f"  {desc}\n"
         
+        # Education section
         if parsed_profile['education']:
             formatted += "\nEducation:\n"
-            for edu in parsed_profile['education'][:2]:  # Limit to top 2 education entries
+            for edu in parsed_profile['education'][:2]:  # Top 2 education entries
                 school_info = edu['school']
                 if edu['years']:
                     school_info += f" ({edu['years']})"
                 formatted += f"• {school_info}\n"
         
+        # Projects section - limit both number and description length
         if parsed_profile.get('projects'):
             formatted += "\nProjects:\n"
-            for project in parsed_profile['projects'][:2]:  # Limit to top 2 projects
+            for project in parsed_profile['projects'][:2]:  # Top 2 projects
                 formatted += f"• {project['title']}"
                 if project['description']:
-                    formatted += f": {project['description'][:150]}..."
+                    desc = project['description']
+                    if len(desc) > 100:  # Shorter limit for projects
+                        desc = desc[:100].rsplit(' ', 1)[0] + "..."
+                    formatted += f": {desc}"
                 formatted += "\n"
         
+        # Publications section - limit both number and description length
         if parsed_profile.get('publications'):
             formatted += "\nPublications:\n"
-            for pub in parsed_profile['publications'][:2]:  # Limit to top 2 publications
+            for pub in parsed_profile['publications'][:2]:  # Top 2 publications
                 formatted += f"• {pub['title']}"
                 if pub['date']:
                     formatted += f" ({pub['date']})"
                 if pub['description']:
-                    formatted += f": {pub['description'][:100]}..."
+                    desc = pub['description']
+                    if len(desc) > 80:  # Shorter limit for publications
+                        desc = desc[:80].rsplit(' ', 1)[0] + "..."
+                    formatted += f": {desc}"
                 formatted += "\n"
+        
+        # Final size check - truncate if still too long
+        if len(formatted) > MAX_TOTAL_EMAIL_LENGTH:
+            log_to_file(f"⚠️ Formatted profile too long ({len(formatted)} chars), truncating to {MAX_TOTAL_EMAIL_LENGTH}")
+            formatted = formatted[:MAX_TOTAL_EMAIL_LENGTH].rsplit('\n', 1)[0] + "\n...[Profile truncated for email generation]"
+        
+        # Log final formatted size
+        log_to_file(f"📊 Formatted profile size: {len(formatted)} characters for {parsed_profile.get('name', 'Unknown')}")
         
         return formatted
         
