@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import json
+import time
 from langchain_email_writer import generate_email
 from generate_subject import generate_subject
 from simple_email import generate_simple_email
@@ -210,6 +211,129 @@ def process_profiles_batch(profiles, generate_email_flag=True, generate_subject_
             profile["generated_subject"] = generate_subject(profile)
 
     return profiles
+
+# === ASYNC EMAIL GENERATION FUNCTIONS ===
+
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+def log_to_file(msg):
+    """Simple logging function for compatibility with app.py logging"""
+    # Try to use app.py's logging if available, otherwise print
+    try:
+        import app
+        if hasattr(app, 'log_to_file'):
+            app.log_to_file(msg)
+        else:
+            print(f"[BACKEND] {msg}")
+    except ImportError:
+        print(f"[BACKEND] {msg}")
+
+async def run_sync_in_thread(func, *args, **kwargs):
+    """Run a synchronous function in a thread pool to make it async"""
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        return await loop.run_in_executor(executor, func, *args, **kwargs)
+
+async def process_profiles_batch_async(profiles, **kwargs):
+    """Async version of process_profiles_batch using existing functions"""
+    log_to_file(f"[TIMING] Starting async processing for {len(profiles)} profiles")
+    
+    # Import the existing functions
+    from langchain_email_writer import generate_email
+    from generate_subject import generate_subject
+    from simple_email import generate_simple_email
+    
+    # First, do the sync parsing if needed (this is fast)
+    needs_parsing = False
+    for profile in profiles:
+        linkedin_data = profile.get("linkedin", {})
+        if isinstance(linkedin_data, dict) and "raw_text" in linkedin_data and "headline" not in linkedin_data:
+            # Already formatted for email generation, don't parse again
+            continue
+        else:
+            # Needs full parsing
+            needs_parsing = True
+            break
+    
+    if needs_parsing:
+        for profile in profiles:
+            linkedin_raw_text = profile.get("linkedin", {}).get("raw_text", "")
+            bio_raw_text = profile.get("bio_page", {}).get("raw_text", "")
+            values_raw_text = profile.get("values_page", {}).get("raw_text", "")
+
+            profile["linkedin"] = parse_linkedin(linkedin_raw_text)
+            profile["bio_page"] = parse_bio_page_new(bio_raw_text)
+            profile["values_page"] = extract_all_text(values_raw_text)
+    
+    # Get flags
+    generate_email_flag = kwargs.get("generate_email_flag", True)
+    generate_subject_flag = kwargs.get("generate_subject_flag", True)
+    simple_email = kwargs.get("simple_email", False)
+    
+    # Create async tasks for email generation using existing functions
+    tasks = []
+    email_calls = 0
+    subject_calls = 0
+    
+    for i, profile in enumerate(profiles):
+        if generate_email_flag:
+            if simple_email:
+                task = run_sync_in_thread(generate_simple_email, profile)
+            else:
+                task = run_sync_in_thread(generate_email, profile)
+            tasks.append(("email", i, task))
+            email_calls += 1
+        
+        if generate_subject_flag:
+            task = run_sync_in_thread(generate_subject, profile)
+            tasks.append(("subject", i, task))
+            subject_calls += 1
+    
+    total_openai_calls = email_calls + subject_calls
+    log_to_file(f"[TIMING] Will make {total_openai_calls} OpenAI calls ({email_calls} emails + {subject_calls} subjects) for {len(profiles)} profiles")
+    log_to_file(f"[TIMING] Created {len(tasks)} async tasks using existing functions")
+    
+    if tasks:
+        # Execute all tasks in parallel
+        openai_start = time.time()
+        task_objects = [task for _, _, task in tasks]
+        log_to_file(f"[TIMING] Starting {total_openai_calls} OpenAI calls in parallel")
+        results = await asyncio.gather(*task_objects)
+        openai_time = time.time() - openai_start
+        log_to_file(f"[TIMING] Completed {total_openai_calls} OpenAI calls in {openai_time:.2f}s (avg: {openai_time/total_openai_calls:.2f}s per call)")
+        
+        # Assign results back to profiles
+        for (task_type, profile_index, _), result in zip(tasks, results):
+            if task_type == "email":
+                profiles[profile_index]["generated_email"] = result
+            elif task_type == "subject":
+                profiles[profile_index]["generated_subject"] = result
+    
+    log_to_file(f"[TIMING] Async processing completed for {len(profiles)} profiles")
+    return profiles
+
+def process_profiles_batch_async_wrapper(profiles, **kwargs):
+    """Sync wrapper for async email generation"""
+    log_to_file(f"[TIMING] Starting async wrapper for {len(profiles)} profiles")
+    
+    # Create new event loop for this thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    try:
+        result = loop.run_until_complete(
+            process_profiles_batch_async(profiles, **kwargs)
+        )
+        log_to_file(f"[TIMING] Async wrapper completed successfully")
+        return result
+    except Exception as e:
+        log_to_file(f"Error in async wrapper: {str(e)}")
+        # Fallback to sync version if async fails
+        log_to_file("[TIMING] Falling back to sync processing")
+        return process_profiles_batch(profiles, **kwargs)
+    finally:
+        loop.close()
 
 # === CLI Entry Point (Optional) ===
 

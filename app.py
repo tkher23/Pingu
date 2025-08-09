@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import os
 import pandas as pd
-from backend import process_profiles_batch  # Import your processing logic
+from backend import process_profiles_batch, process_profiles_batch_async_wrapper  # Import your processing logic
 from flask_cors import CORS
 import json
 import requests
@@ -10,6 +10,7 @@ import stripe
 from datetime import datetime, timedelta
 import logging
 import sys
+import time
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -22,17 +23,48 @@ BRIGHT_DATA_TOKEN = os.getenv("BRIGHT_DATA_TOKEN")
 BRIGHT_DATA_DATASET_ID = os.getenv("BRIGHT_DATA_DATASET_ID")
 APOLLO_API_KEY = os.getenv("APOLLO_API_KEY")
 
+# Create logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
 
-# --- Logging setup for Render (stdout, global) ---
+# --- Consolidated Logging setup - ALL LOGS IN ONE FILE ---
+from datetime import datetime
+
+# Clear and setup a single comprehensive log file
+log_filename = 'logs/all_logs.log'
+
+# Configure logging to write everything to one file
 logging.basicConfig(
     level=logging.INFO,
-    format='[WEBHOOK] %(asctime)s %(levelname)s %(message)s',
-    stream=sys.stdout
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(log_filename, mode='a'),  # Append to one file
+        logging.StreamHandler(sys.stdout)  # Also show in terminal
+    ],
+    force=True  # Override any existing handlers
 )
 # --- End logging setup ---
 
 def log_to_file(msg):
-    logging.info(msg)
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    formatted_msg = f"[{timestamp}] {msg}"
+    
+    # Write directly to the consolidated log file with UTF-8 encoding
+    try:
+        with open('logs/all_logs.log', 'a', encoding='utf-8') as f:
+            f.write(formatted_msg + '\n')
+            f.flush()
+    except UnicodeEncodeError:
+        # Fallback: replace problematic characters
+        safe_msg = msg.encode('ascii', 'replace').decode('ascii')
+        safe_formatted = f"[{timestamp}] {safe_msg}"
+        with open('logs/all_logs.log', 'a', encoding='utf-8') as f:
+            f.write(safe_formatted + '\n')
+            f.flush()
+    
+    # Also print to console (avoid emoji issues in terminal)
+    safe_console_msg = msg.replace('[TIMING]', '[TIMING]').replace('🔗', '[LINK]').replace('❌', '[ERROR]').replace('✅', '[SUCCESS]')
+    print(f"[{timestamp}] {safe_console_msg}", flush=True)
 
 def find_emails_with_apollo_bulk(brightdata_profiles):
     """
@@ -158,6 +190,7 @@ def find_email_with_apollo(brightdata_profile):
     Returns:
         dict: Contains email, phone, and other contact info if found
     """
+    apollo_start = time.time()
     if not APOLLO_API_KEY:
         log_to_file("Apollo API key not configured")
         return {"email": None, "phone": None, "apollo_found": False}
@@ -171,6 +204,8 @@ def find_email_with_apollo(brightdata_profile):
         return {"email": None, "phone": None, "apollo_found": False}
     
     try:
+        # Step 1: Prepare Apollo request
+        request_prep_start = time.time()
         apollo_url = "https://api.apollo.io/api/v1/people/match"
         headers = {
             "Content-Type": "application/json",
@@ -187,8 +222,12 @@ def find_email_with_apollo(brightdata_profile):
         log_to_file(f"� Apollo enrichment API call with params: {json.dumps(enrich_params, indent=2)}")
         log_to_file(f"🌐 Apollo API URL: {apollo_url}")
         log_to_file(f"🔑 Apollo API Key: {APOLLO_API_KEY[:10]}...")
+        log_to_file(f"[TIMING] APOLLO REQUEST PREP took {time.time() - request_prep_start:.2f}s")
         
+        # Step 2: Make Apollo API call
+        api_call_start = time.time()
         response = requests.post(apollo_url, headers=headers, json=enrich_params)
+        log_to_file(f"[TIMING] APOLLO API CALL took {time.time() - api_call_start:.2f}s")
         
         log_to_file(f"📡 Apollo API response status: {response.status_code}")
         
@@ -196,6 +235,8 @@ def find_email_with_apollo(brightdata_profile):
             log_to_file(f"❌ Apollo enrichment API error: {response.status_code} - {response.text}")
             return {"email": None, "phone": None, "apollo_found": False}
         
+        # Step 3: Parse Apollo response
+        response_parse_start = time.time()
         data = response.json()
         log_to_file(f"📄 Apollo enrichment response data: {json.dumps(data, indent=2)}")
         
@@ -207,10 +248,11 @@ def find_email_with_apollo(brightdata_profile):
         
         email = person.get("email")
         log_to_file(f"📧 Extracted email from Apollo: '{email}'")
+        log_to_file(f"[TIMING] APOLLO RESPONSE PARSE took {time.time() - response_parse_start:.2f}s")
         
         if email and email != "email_not_unlocked@domain.com":
             log_to_file(f"✅ Apollo found email: {email}")
-            return {
+            result = {
                 "email": email,
                 "phone": None,
                 "apollo_found": True,
@@ -218,6 +260,8 @@ def find_email_with_apollo(brightdata_profile):
                 "apollo_title": person.get("title"),
                 "apollo_company": person.get("organization", {}).get("name") if person.get("organization") else None
             }
+            log_to_file(f"[TIMING] TOTAL APOLLO ENRICHMENT took {time.time() - apollo_start:.2f}s")
+            return result
         else:
             log_to_file(f"❌ No valid email in Apollo enrichment response (got: '{email}')")
             return {"email": None, "phone": None, "apollo_found": False}
@@ -424,14 +468,23 @@ def process_spreadsheet():
 # 🔥 New endpoint for Chrome Extension 🔥
 @app.route('/api/process-single-profile', methods=['POST'])
 def process_single_profile():
+    start_time = time.time()
     try:
+        # Step 1: Authentication
+        auth_start = time.time()
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         user_id = get_user_id_from_token(token)
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
-        # 🟢 Initialize trial if needed
+        log_to_file(f"[TIMING] AUTH took {time.time() - auth_start:.2f}s")
+        
+        # Step 2: Initialize trial
+        trial_start = time.time()
         initialize_trial_if_needed(user_id)
-        # 🚫 Check if user has credits and trial/subscription status
+        log_to_file(f"[TIMING] TRIAL INIT took {time.time() - trial_start:.2f}s")
+        
+        # Step 3: Check user profile and credits
+        profile_check_start = time.time()
         # Fetch all relevant fields
         url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=plan_type,credits,trial_end_date,subscription_updated_at,subscription_status"
         headers = {
@@ -448,6 +501,10 @@ def process_single_profile():
         subscription_updated_at = user.get("subscription_updated_at")
         subscription_status = user.get("subscription_status")
         today = datetime.utcnow()
+        log_to_file(f"[TIMING] PROFILE CHECK took {time.time() - profile_check_start:.2f}s")
+        
+        # Step 4: Access control validation
+        validation_start = time.time()
         # Access control logic
         if plan_type == "trial":
             if trial_end_date:
@@ -466,6 +523,10 @@ def process_single_profile():
                 return jsonify({"error": "Your subscription has expired. Please renew to continue."}), 403
         if user_credits < 2:
             return jsonify({"error": "You need at least 2 credits to generate an advanced email. Please upgrade or contact support."}), 403
+        log_to_file(f"[TIMING] VALIDATION took {time.time() - validation_start:.2f}s")
+        
+        # Step 5: Parse request data
+        data_parse_start = time.time()
         data = request.get_json()
         print("🟡 Received data:", json.dumps(data, indent=2))
         profile = {
@@ -478,8 +539,19 @@ def process_single_profile():
             "company_of_interest": data.get("user_info", {}).get("company_interest", ""),
             "role_type": data.get("user_info", {}).get("role_type", "internship")
         }
-        processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False)
+        log_to_file(f"[TIMING] DATA PARSE took {time.time() - data_parse_start:.2f}s")
+        
+        # Step 6: Process profile batch (email generation)
+        processing_start = time.time()
+        processed = process_profiles_batch_async_wrapper([profile], generate_email_flag=True, generate_subject_flag=False)
+        log_to_file(f"[TIMING] EMAIL PROCESSING took {time.time() - processing_start:.2f}s")
+        
+        # Step 7: Decrement credits
+        credit_start = time.time()
         decrement_user_credits(user_id, amount=2)  # Use 2 credits for advanced email
+        log_to_file(f"[TIMING] CREDIT DECREMENT took {time.time() - credit_start:.2f}s")
+        
+        log_to_file(f"[TIMING] TOTAL SINGLE PROFILE PROCESSING took {time.time() - start_time:.2f}s")
         return jsonify(processed[0]), 200
     except Exception as e:
         print("❌ ERROR:", e)
@@ -537,7 +609,7 @@ def generate_subject_route():
             "company_of_interest": company
         }
 
-        processed = process_profiles_batch([profile], generate_email_flag=False, generate_subject_flag=True)
+        processed = process_profiles_batch_async_wrapper([profile], generate_email_flag=False, generate_subject_flag=True)
         subject = processed[0].get("generated_subject", "")
 
         return jsonify({"subject": subject}), 200
@@ -575,7 +647,7 @@ def generate_simple_email_api():
             "company_of_interest": data.get("user_info", {}).get("company_interest", ""),
         }
 
-        processed = process_profiles_batch([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
+        processed = process_profiles_batch_async_wrapper([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
 
         decrement_user_credits(user_id, amount=1)  # Use 1 credit for simple email
         return jsonify(processed[0]), 200
@@ -972,6 +1044,9 @@ def trigger_linkedin_scrape():
 @app.route('/api/scrape-batch-result/<job_id>', methods=['GET'])
 def get_batch_scrape_result(job_id):
     """Poll for BrightData batch scraping results and generate emails when complete"""
+    start_time = time.time()
+    log_to_file(f"[TIMING] BATCH PROCESSING started for job_id: {job_id}")
+    
     try:
         # Get auth token from request headers
         auth_header = request.headers.get('Authorization', '')
@@ -1022,6 +1097,9 @@ def get_batch_scrape_result(job_id):
         batch_job_metadata[job_id]['status_checks'] = status_checks + 1
 
         # Check BrightData job status
+        brightdata_start = time.time()
+        log_to_file(f"[TIMING] BRIGHTDATA BATCH CHECK started")
+        
         bright_data_url = f"https://api.brightdata.com/datasets/v3/snapshot/{job_id}"
         headers = {
             "Authorization": f"Bearer {BRIGHT_DATA_TOKEN}"
@@ -1032,6 +1110,9 @@ def get_batch_scrape_result(job_id):
         }
 
         response = requests.get(bright_data_url, headers=headers, params=params)
+        
+        brightdata_time = time.time() - brightdata_start
+        log_to_file(f"[TIMING] BRIGHTDATA BATCH CHECK completed in {brightdata_time:.2f}s")
         
         if not response.ok:
             log_to_file(f"BrightData batch status check error: {response.status_code} - {response.text}")
@@ -1069,12 +1150,18 @@ def get_batch_scrape_result(job_id):
             return jsonify({"error": "Unexpected response format"}), 500
         
         # Fetch user profile settings once for all emails
+        user_settings_start = time.time()
+        log_to_file(f"[TIMING] USER SETTINGS FETCH started")
+        
         user_settings_url = f"{SUPABASE_URL}/rest/v1/user_settings?id=eq.{user_id}"
         user_settings_headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
         }
         user_settings_response = requests.get(user_settings_url, headers=user_settings_headers)
+        
+        user_settings_time = time.time() - user_settings_start
+        log_to_file(f"[TIMING] USER SETTINGS FETCH completed in {user_settings_time:.2f}s")
         
         user_info = {}
         if user_settings_response.ok and user_settings_response.json():
@@ -1135,15 +1222,25 @@ def get_batch_scrape_result(job_id):
             parsed_profiles.append(parsed_profile)
         
         # Use bulk Apollo enrichment with ORIGINAL URLs (not from BrightData)
+        apollo_start = time.time()
         apollo_results = []
         if should_use_apollo_enrichment(user_plan_type) and original_linkedin_urls:
+            log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT started for {len(original_linkedin_urls)} URLs")
             log_to_file(f"🔗 Using {len(original_linkedin_urls)} ORIGINAL LinkedIn URLs for bulk Apollo enrichment")
             log_to_file(f"🔗 Original URLs: {original_linkedin_urls}")
             # Create enrichment profiles with original URLs
             enrichment_profiles = [{"linkedin_url": url} for url in original_linkedin_urls]
             apollo_results = find_emails_with_apollo_bulk(enrichment_profiles)
         else:
+            log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT skipped (plan: {user_plan_type})")
             apollo_results = [{"email": None, "phone": None, "apollo_found": False} for _ in parsed_profiles]
+        
+        apollo_time = time.time() - apollo_start
+        log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT completed in {apollo_time:.2f}s")
+        
+        # Start email generation timing
+        email_generation_start = time.time()
+        log_to_file(f"[TIMING] EMAIL GENERATION started for {len(profiles_data)} profiles")
         
         for i, profile_data in enumerate(profiles_data):
             parsed_profile = parsed_profiles[i]
@@ -1178,7 +1275,7 @@ def get_batch_scrape_result(job_id):
                 "role_type": user_info.get("role_type", "internship")
             }]
             
-            processed = process_profiles_batch(
+            processed = process_profiles_batch_async_wrapper(
                 email_profiles,
                 generate_email_flag=True,
                 generate_subject_flag=True,
@@ -1200,6 +1297,11 @@ def get_batch_scrape_result(job_id):
         # Clean up batch metadata
         if job_id in batch_job_metadata:
             del batch_job_metadata[job_id]
+        
+        email_generation_time = time.time() - email_generation_start
+        total_time = time.time() - start_time
+        log_to_file(f"[TIMING] EMAIL GENERATION completed in {email_generation_time:.2f}s")
+        log_to_file(f"[TIMING] TOTAL BATCH PROCESSING completed in {total_time:.2f}s")
         
         # Prepare response with information about skipped profiles
         response_data = {
@@ -1224,8 +1326,10 @@ def get_batch_scrape_result(job_id):
 @app.route('/api/scrape-result/<job_id>', methods=['POST'])
 def get_scrape_result(job_id):
     """Poll for BrightData scraping results and generate email when complete"""
+    start_time = time.time()
     try:
-        # Get auth token from request headers
+        # Step 1: Authentication
+        auth_start = time.time()
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return jsonify({"error": "Missing or invalid authorization token"}), 401
@@ -1234,8 +1338,10 @@ def get_scrape_result(job_id):
         user_id = get_user_id_from_token(token)
         if not user_id:
             return jsonify({"error": "Invalid token"}), 401
+        log_to_file(f"[TIMING] SCRAPE AUTH took {time.time() - auth_start:.2f}s")
 
-        # Get stored metadata for this job
+        # Step 2: Job validation
+        job_validation_start = time.time()
         job_metadata = batch_job_metadata.get(job_id, {})
         if not job_metadata:
             return jsonify({"error": "Job not found or expired"}), 404
@@ -1272,13 +1378,17 @@ def get_scrape_result(job_id):
         
         # Increment status check counter
         batch_job_metadata[job_id]['status_checks'] = status_checks + 1
+        log_to_file(f"[TIMING] JOB VALIDATION took {time.time() - job_validation_start:.2f}s")
 
-        # Get company_info and recipient_bio from JSON body
+        # Step 3: Parse request data
+        data_parse_start = time.time()
         data = request.get_json() or {}
         company_info = data.get('company_info', '')
         recipient_bio = data.get('recipient_bio', '')
+        log_to_file(f"[TIMING] DATA PARSE took {time.time() - data_parse_start:.2f}s")
 
-        # Check BrightData job status
+        # Step 4: Check BrightData status
+        brightdata_check_start = time.time()
         bright_data_url = f"https://api.brightdata.com/datasets/v3/snapshot/{job_id}"
         headers = {
             "Authorization": f"Bearer {BRIGHT_DATA_TOKEN}"
@@ -1295,7 +1405,10 @@ def get_scrape_result(job_id):
             return jsonify({"error": "Failed to check job status"}), 500
 
         result = response.json()
+        log_to_file(f"[TIMING] BRIGHTDATA CHECK took {time.time() - brightdata_check_start:.2f}s")
         
+        # Step 5: Process BrightData result
+        result_processing_start = time.time()
         # Check if result is a list (completed data) or dict (status info)
         if isinstance(result, list):
             # Job completed, data returned directly as list
@@ -1324,20 +1437,25 @@ def get_scrape_result(job_id):
         else:
             log_to_file(f"Unexpected BrightData response type: {type(result)}")
             return jsonify({"error": "Unexpected response format"}), 500
+        log_to_file(f"[TIMING] RESULT PROCESSING took {time.time() - result_processing_start:.2f}s")
         
-        # Validate profile size before processing
+        # Step 6: Validate profile size
+        validation_start = time.time()
         is_valid, validation_message = validate_profile_size(profile_data)
         
         if not is_valid:
             log_to_file(f"❌ Single profile processing failed: {validation_message}")
             return jsonify({"error": f"Profile too large to process: {validation_message}"}), 413  # 413 = Payload Too Large
+        log_to_file(f"[TIMING] PROFILE VALIDATION took {time.time() - validation_start:.2f}s")
         
-        # Parse the LinkedIn data into our format
+        # Step 7: Parse LinkedIn profile
+        parsing_start = time.time()
         parsed_profile = parse_brightdata_linkedin(profile_data)
+        log_to_file(f"[TIMING] PROFILE PARSING took {time.time() - parsing_start:.2f}s")
         
-        # Use job metadata from validation above
+        # Step 8: Apollo enrichment
+        apollo_start = time.time()
         original_linkedin_url = job_metadata.get('original_linkedin_url', '')
-        
         log_to_file(f"🔗 Using ORIGINAL LinkedIn URL for Apollo: '{original_linkedin_url}'")
         
         # Try to find email using Apollo with ORIGINAL LinkedIn URL (not from BrightData response)
@@ -1351,8 +1469,10 @@ def get_scrape_result(job_id):
         parsed_profile["apollo_email"] = apollo_result.get("email")
         parsed_profile["apollo_phone"] = apollo_result.get("phone")
         parsed_profile["apollo_found"] = apollo_result.get("apollo_found", False)
+        log_to_file(f"[TIMING] APOLLO ENRICHMENT took {time.time() - apollo_start:.2f}s")
         
-        # Fetch user profile settings to include in email generation
+        # Step 9: Fetch user settings
+        user_settings_start = time.time()
         user_settings_url = f"{SUPABASE_URL}/rest/v1/user_settings?id=eq.{user_id}"
         user_settings_headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
@@ -1371,7 +1491,10 @@ def get_scrape_result(job_id):
                 "role_type": user_settings.get("role_type", "internship"),
                 "default_interest": user_settings.get("default_interest", "")
             }
+        log_to_file(f"[TIMING] USER SETTINGS FETCH took {time.time() - user_settings_start:.2f}s")
         
+        # Step 10: Generate email
+        email_generation_start = time.time()
         # Generate email using existing pipeline with user context, company info, and recipient bio
         email_profiles = [{
             "linkedin": {"raw_text": format_profile_for_email(parsed_profile)},
@@ -1384,7 +1507,7 @@ def get_scrape_result(job_id):
             "role_type": user_info.get("role_type", "internship")
         }]
         
-        processed = process_profiles_batch(
+        processed = process_profiles_batch_async_wrapper(
             email_profiles,
             generate_email_flag=True,
             generate_subject_flag=True,
@@ -1392,11 +1515,13 @@ def get_scrape_result(job_id):
         )
         
         generated_profile = processed[0]
+        log_to_file(f"[TIMING] EMAIL GENERATION took {time.time() - email_generation_start:.2f}s")
         
         # Clean up job metadata
         if job_id in batch_job_metadata:
             del batch_job_metadata[job_id]
         
+        log_to_file(f"[TIMING] TOTAL SCRAPE RESULT PROCESSING took {time.time() - start_time:.2f}s")
         return jsonify({
             "status": "done",
             "profile": parsed_profile,

@@ -1,0 +1,83 @@
+2025-08-08 17:26:55,616 [WARNING]  * Debugger is active!
+2025-08-08 17:26:55,627 [INFO]  * Debugger PIN: 881-605-601
+2025-08-08 17:27:43,622 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:43] "OPTIONS /api/scrape-linkedin HTTP/1.1" 200 -
+2025-08-08 17:27:45,550 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:45] "POST /api/scrape-linkedin HTTP/1.1" 200 -
+2025-08-08 17:27:45,562 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:45] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:27:48,016 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:48] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:27:53,947 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:53] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:27:56,493 [INFO] 127.0.0.1 - - [08/Aug/2025 17:27:56] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:00,509 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:00] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:03,190 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:03] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:05,417 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:05] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:08,206 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:08] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:10,347 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:10] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:15,259 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:15] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:18,510 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:18] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:21,613 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:21] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:23,619 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:23] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:25,539 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:25] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:30,000 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:30] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:32,512 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:32] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:35,330 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:35] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:38,199 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:38] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:41,396 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:41] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:44,187 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:44] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:46,392 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:46] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:52,119 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:52] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:54,518 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:54] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:28:57,850 [INFO] 127.0.0.1 - - [08/Aug/2025 17:28:57] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:00,186 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:00] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:02,157 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:02] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:06,044 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:06] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:08,500 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:08] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:11,455 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:11] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:14,194 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:14] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:16,701 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:16] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:20,795 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:20] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:23,514 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:23] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:25,706 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:25] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:30,608 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:30] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:33,516 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:33] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:37,179 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:37] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:40,198 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:40] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:42,505 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:42] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:48,658 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:48] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:51,515 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:51] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:53,765 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:53] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:29:58,676 [INFO] 127.0.0.1 - - [08/Aug/2025 17:29:58] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:01,512 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:01] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:05,025 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:05] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:07,203 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:07] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:09,345 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:09] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:14,868 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:14] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:17,504 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:17] "OPTIONS /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:19,574 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:19] "POST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1" 200 -
+2025-08-08 17:30:22,634 [INFO] 127.0.0.1 - - [08/Aug/2025 17:30:22] "[31m[1mPOST /api/scrape-result/s_me3imy1yqnurxi7o4 HTTP/1.1[0m" 429 -
+2025-08-08 17:33:19,124 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:19] "OPTIONS /api/scrape-linkedin HTTP/1.1" 200 -
+2025-08-08 17:33:21,063 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:21] "POST /api/scrape-linkedin HTTP/1.1" 200 -
+2025-08-08 17:33:21,077 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:21] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:23,977 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:23] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:26,195 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:26] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:29,414 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:29] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:32,189 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:32] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:34,744 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:34] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:37,200 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:37] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:40,162 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:40] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:45,044 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:45] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:47,511 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:47] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:51,131 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:51] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:53,195 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:53] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:55,163 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:55] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:33:58,690 [INFO] 127.0.0.1 - - [08/Aug/2025 17:33:58] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:34:01,507 [INFO] 127.0.0.1 - - [08/Aug/2025 17:34:01] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:34:04,652 [INFO] 127.0.0.1 - - [08/Aug/2025 17:34:04] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:34:07,198 [INFO] 127.0.0.1 - - [08/Aug/2025 17:34:07] "OPTIONS /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:34:11,340 [INFO] BrightData job completed, got 1 profiles
+2025-08-08 17:34:11,384 [INFO] DEBUG: Raw experience data: None
+2025-08-08 17:34:11,384 [INFO] DEBUG: Experience type: <class 'NoneType'>
+2025-08-08 17:34:11,384 [INFO] DEBUG: No valid experience data found
+2025-08-08 17:34:11,387 [INFO] DEBUG: Final parsed experiences: []
+2025-08-08 17:34:13,884 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-08 17:34:15,258 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-08 17:34:15,310 [INFO] 127.0.0.1 - - [08/Aug/2025 17:34:15] "POST /api/scrape-result/s_me3iu4yb1xqesbpmri HTTP/1.1" 200 -
+2025-08-08 17:40:56,459 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
