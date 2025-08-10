@@ -328,6 +328,50 @@ def should_use_apollo_enrichment(user_plan_type):
     # Alternative: Only for paid plans
     # return user_plan_type in ["basic", "advanced"]
 
+def calculate_exponential_backoff_delay(status_checks):
+    """
+    Calculate exponential backoff delay for BrightData polling
+    
+    Args:
+        status_checks (int): Number of status checks already performed
+    
+    Returns:
+        float: Delay in seconds before next check
+    """
+    # Exponential backoff: 0.5s → 1s → 2s → 4s → 8s → 10s (max)
+    base_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
+    max_delay = 10.0
+    
+    if status_checks < len(base_delays):
+        return base_delays[status_checks]
+    else:
+        return max_delay
+
+def get_next_poll_time(job_metadata):
+    """
+    Calculate when the next poll should happen based on exponential backoff
+    
+    Args:
+        job_metadata (dict): Job metadata containing last_poll_time and status_checks
+    
+    Returns:
+        float: Timestamp when next poll should happen, or 0 if ready to poll now
+    """
+    last_poll_time = job_metadata.get('last_poll_time', 0)
+    status_checks = job_metadata.get('status_checks', 0)
+    
+    if last_poll_time == 0:
+        return 0  # First poll, ready immediately
+    
+    delay = calculate_exponential_backoff_delay(status_checks - 1)  # -1 because we increment after calculation
+    next_poll_time = last_poll_time + delay
+    current_time = time.time()
+    
+    if current_time >= next_poll_time:
+        return 0  # Ready to poll now
+    else:
+        return next_poll_time  # Return when next poll should happen
+
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
@@ -916,7 +960,8 @@ def trigger_linkedin_batch_scrape():
             'started_at': datetime.utcnow().isoformat(),
             'status_checks': 0,
             'max_status_checks': 30,  # Maximum number of status checks allowed
-            'timeout_minutes': 10     # Job timeout in minutes
+            'timeout_minutes': 10,    # Job timeout in minutes
+            'last_poll_time': 0       # Track last poll time for exponential backoff
         }
 
         # Trigger BrightData batch scraping job
@@ -928,7 +973,8 @@ def trigger_linkedin_batch_scrape():
         
         params = {
             "dataset_id": BRIGHT_DATA_DATASET_ID,
-            "include_errors": "true"
+            "include_errors": "true",
+            "custom_output_fields": "url|name|position|about|experience|education|projects|publications"
         }
         
         # BrightData expects an array of URLs
@@ -1002,7 +1048,8 @@ def trigger_linkedin_scrape():
         
         params = {
             "dataset_id": BRIGHT_DATA_DATASET_ID,
-            "include_errors": "true"
+            "include_errors": "true",
+            "custom_output_fields": "url|name|position|about|experience|education|projects|publications"
         }
         
         # BrightData expects an array of URLs
@@ -1029,7 +1076,8 @@ def trigger_linkedin_scrape():
             'started_at': datetime.utcnow().isoformat(),
             'status_checks': 0,
             'max_status_checks': 30,  # Maximum number of status checks allowed
-            'timeout_minutes': 10     # Job timeout in minutes
+            'timeout_minutes': 10,    # Job timeout in minutes
+            'last_poll_time': 0       # Track last poll time for exponential backoff
         }
 
         # Decrement user credits since we started the job (2 credits for BrightData processing)
@@ -1093,8 +1141,24 @@ def get_batch_scrape_result(job_id):
                 del batch_job_metadata[job_id]
             return jsonify({"error": f"Maximum status checks ({max_status_checks}) exceeded. Please try again."}), 429
         
-        # Increment status check counter
+        # Check if enough time has passed for next poll (exponential backoff)
+        next_poll_time = get_next_poll_time(batch_metadata)
+        if next_poll_time > 0:
+            current_time = time.time()
+            wait_seconds = max(0, next_poll_time - current_time)
+            log_to_file(f"[TIMING] EXPONENTIAL BACKOFF: Need to wait {wait_seconds:.1f}s before next poll")
+            return jsonify({
+                "status": "pending",
+                "message": "Exponential backoff - please wait before next poll",
+                "wait_seconds": round(wait_seconds, 1),
+                "checks_remaining": max_status_checks - status_checks,
+                "elapsed_minutes": round(elapsed.total_seconds() / 60, 1) if started_at_str else 0,
+                "timeout_minutes": timeout_minutes
+            }), 200
+        
+        # Increment status check counter and update last poll time
         batch_job_metadata[job_id]['status_checks'] = status_checks + 1
+        batch_job_metadata[job_id]['last_poll_time'] = time.time()
 
         # Check BrightData job status
         brightdata_start = time.time()
@@ -1223,7 +1287,7 @@ def get_batch_scrape_result(job_id):
         
         # Use bulk Apollo enrichment with ORIGINAL URLs (not from BrightData)
         apollo_start = time.time()
-        apollo_results = []
+        apollo_results_by_url = {}  # Map results by URL for accurate matching
         if should_use_apollo_enrichment(user_plan_type) and original_linkedin_urls:
             log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT started for {len(original_linkedin_urls)} URLs")
             log_to_file(f"🔗 Using {len(original_linkedin_urls)} ORIGINAL LinkedIn URLs for bulk Apollo enrichment")
@@ -1231,9 +1295,16 @@ def get_batch_scrape_result(job_id):
             # Create enrichment profiles with original URLs
             enrichment_profiles = [{"linkedin_url": url} for url in original_linkedin_urls]
             apollo_results = find_emails_with_apollo_bulk(enrichment_profiles)
+            
+            # Map Apollo results by URL to avoid index mismatch issues
+            for i, url in enumerate(original_linkedin_urls):
+                if i < len(apollo_results):
+                    apollo_results_by_url[url] = apollo_results[i]
+                    log_to_file(f"🔗 Mapped Apollo result for {url}: {apollo_results[i].get('email', 'No email')}")
+                else:
+                    apollo_results_by_url[url] = {"email": None, "phone": None, "apollo_found": False}
         else:
             log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT skipped (plan: {user_plan_type})")
-            apollo_results = [{"email": None, "phone": None, "apollo_found": False} for _ in parsed_profiles]
         
         apollo_time = time.time() - apollo_start
         log_to_file(f"[TIMING] APOLLO BULK ENRICHMENT completed in {apollo_time:.2f}s")
@@ -1244,7 +1315,29 @@ def get_batch_scrape_result(job_id):
         
         for i, profile_data in enumerate(profiles_data):
             parsed_profile = parsed_profiles[i]
-            apollo_result = apollo_results[i] if i < len(apollo_results) else {"email": None, "phone": None, "apollo_found": False}
+            
+            # Find Apollo result by matching URL instead of using index
+            profile_url = profile_data.get("url", "")
+            apollo_result = {"email": None, "phone": None, "apollo_found": False}
+            
+            # Try to find matching Apollo result by URL
+            if profile_url and apollo_results_by_url:
+                # Try exact match first
+                if profile_url in apollo_results_by_url:
+                    apollo_result = apollo_results_by_url[profile_url]
+                    log_to_file(f"✅ Exact URL match found for {profile_url}: {apollo_result.get('email', 'No email')}")
+                else:
+                    # Try to find by URL normalization (remove trailing slashes, etc.)
+                    normalized_profile_url = profile_url.rstrip('/')
+                    for orig_url, apollo_data in apollo_results_by_url.items():
+                        normalized_orig_url = orig_url.rstrip('/')
+                        if normalized_profile_url == normalized_orig_url:
+                            apollo_result = apollo_data
+                            log_to_file(f"✅ Normalized URL match found: {profile_url} → {orig_url}: {apollo_result.get('email', 'No email')}")
+                            break
+                    else:
+                        log_to_file(f"❌ No Apollo result found for profile URL: {profile_url}")
+                        log_to_file(f"❌ Available Apollo URLs: {list(apollo_results_by_url.keys())}")
             
             # Add Apollo results to parsed profile
             parsed_profile["apollo_email"] = apollo_result.get("email")
@@ -1376,8 +1469,24 @@ def get_scrape_result(job_id):
                 del batch_job_metadata[job_id]
             return jsonify({"error": f"Maximum status checks ({max_status_checks}) exceeded. Please try again."}), 429
         
-        # Increment status check counter
+        # Check if enough time has passed for next poll (exponential backoff)
+        next_poll_time = get_next_poll_time(job_metadata)
+        if next_poll_time > 0:
+            current_time = time.time()
+            wait_seconds = max(0, next_poll_time - current_time)
+            log_to_file(f"[TIMING] EXPONENTIAL BACKOFF: Need to wait {wait_seconds:.1f}s before next poll")
+            return jsonify({
+                "status": "pending",
+                "message": "Exponential backoff - please wait before next poll",
+                "wait_seconds": round(wait_seconds, 1),
+                "checks_remaining": max_status_checks - status_checks,
+                "elapsed_minutes": round(elapsed.total_seconds() / 60, 1) if started_at_str else 0,
+                "timeout_minutes": timeout_minutes
+            }), 200
+        
+        # Increment status check counter and update last poll time
         batch_job_metadata[job_id]['status_checks'] = status_checks + 1
+        batch_job_metadata[job_id]['last_poll_time'] = time.time()
         log_to_file(f"[TIMING] JOB VALIDATION took {time.time() - job_validation_start:.2f}s")
 
         # Step 3: Parse request data

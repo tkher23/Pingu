@@ -47,7 +47,7 @@ The recipient's profile information may be incomplete or missing. Handle this gr
 === TASK ===
 Write a short cold email (max 125 words) from the perspective of {user_name}. The email should:
 
-- Start with "Dear {recipient_name}"
+- Start with "Dear [First Name Only]" (extract just the first name from {recipient_name})
 - Briefly introduce who you are
 - Find the BEST available connection point from their profile (experience, projects, publications, education, or company)
 - If profile is sparse, focus on the company/industry instead of personal details
@@ -56,7 +56,7 @@ Write a short cold email (max 125 words) from the perspective of {user_name}. Th
 - Be informal, warm, and human — but concise
 - Do **not** mention where you found their profile or say "I came across you through..."
 - **Adapt your approach** based on available information quality
-- **IMPORTANT**: Write ONLY the email body. Do NOT include a subject line, "Subject:" field, or any email headers. Start directly with "Dear {recipient_name}".
+- **IMPORTANT**: Write ONLY the email body. Do NOT include a subject line, "Subject:" field, or any email headers. Start directly with "Dear [First Name]" where you extract the first name from "{recipient_name}".
 
 Write the email body below:
 """

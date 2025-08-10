@@ -27,6 +27,8 @@ Keep the tone professional but warm. Include:
 - a direct ask for a 15-minute chat
 - gratitude and polite closing
 
+IMPORTANT: When addressing the recipient, use only their first name (extract from "{recipient_name}"). Start the email with "Dear [First Name]".
+
 Output ONLY the email body (no subject line, no quotes).
 """
 )
