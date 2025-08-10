@@ -867,16 +867,15 @@ def generate_simple_email_api():
 
 @app.route('/api/send-email-smart', methods=['POST'])
 def send_email_smart():
-    """Single endpoint that handles both single and multiple emails intelligently"""
+    """Handle multiple recipient emails - backend handles all validation and logic"""
     try:
-        # Get user_id from authorization header (following existing auth pattern)
+        # Get user from authorization header
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         user_id = get_user_id_from_token(token)
         if not user_id:
-            return jsonify({"success": False, "error": "Unauthorized"}), 401
+            return jsonify({"success": False, "error": "Please log in first"}), 401
         
         data = request.json
-        mode = data.get('mode', 'single')  # 'single' or 'multiple'
         recipient_emails = data.get('recipient_emails', '').strip()
         recipient_name = data.get('recipient_name', '').strip()
         subject = data.get('subject', '').strip()
@@ -884,18 +883,14 @@ def send_email_smart():
         sender_name = data.get('sender_name', '')
         sender_email = data.get('sender_email', '')
         
-        log_to_file(f"[TIMING] Smart email endpoint called: mode={mode}, user_id={user_id}")
+        log_to_file(f"[TIMING] Smart email endpoint called: user_id={user_id}")
         
-        # Backend validation
-        if not all([recipient_emails, subject, body]):
-            return jsonify({"success": False, "error": "Missing required fields"}), 400
+        # Backend handles ALL validation
+        if not recipient_emails or not subject or not body:
+            return jsonify({"success": False, "error": "Missing required fields: recipient emails, subject, or body"}), 400
         
-        if mode == 'single':
-            if not recipient_name:
-                return jsonify({"success": False, "error": "Recipient name required for single emails"}), 400
-            return handle_single_email(user_id, recipient_emails, recipient_name, subject, body, sender_name, sender_email)
-        else:
-            return handle_multiple_emails(user_id, recipient_emails, subject, body, sender_name, sender_email)
+        # Always handle as multiple recipients (no mode parameter)
+        return handle_multiple_emails(user_id, recipient_emails, subject, body, sender_name, sender_email)
             
     except Exception as e:
         log_to_file(f"Error in send_email_smart: {str(e)}")
