@@ -7597,3 +7597,938 @@
 2025-08-09 18:01:11,243 [INFO]  * Debugger PIN: 881-605-601
 2025-08-09 18:01:25,548 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\simple_email.py', reloading
 2025-08-09 18:01:26,271 [INFO]  * Restarting with stat
+2025-08-09 18:01:35,335 [WARNING]  * Debugger is active!
+2025-08-09 18:01:35,338 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:15:07,677 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\test_brightdata_optimizations.py', reloading
+2025-08-09 18:15:08,451 [INFO]  * Restarting with stat
+2025-08-09 18:15:17,765 [WARNING]  * Debugger is active!
+2025-08-09 18:15:17,770 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:15:52,713 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 18:15:53,898 [INFO]  * Restarting with stat
+2025-08-09 18:16:02,647 [WARNING]  * Debugger is active!
+2025-08-09 18:16:02,656 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:16:28,082 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 18:16:28,861 [INFO]  * Restarting with stat
+2025-08-09 18:16:37,438 [WARNING]  * Debugger is active!
+2025-08-09 18:16:37,446 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:17:01,584 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 18:17:02,313 [INFO]  * Restarting with stat
+2025-08-09 18:17:11,357 [WARNING]  * Debugger is active!
+2025-08-09 18:17:11,364 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:21:24,553 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.10.3:5000
+2025-08-09 18:21:24,553 [INFO] [33mPress CTRL+C to quit[0m
+2025-08-09 18:21:24,556 [INFO]  * Restarting with stat
+2025-08-09 18:21:32,845 [WARNING]  * Debugger is active!
+2025-08-09 18:21:32,853 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:29:18,788 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 18:29:19,432 [INFO]  * Restarting with stat
+2025-08-09 18:29:28,274 [WARNING]  * Debugger is active!
+2025-08-09 18:29:28,276 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:30:39,943 [INFO] 127.0.0.1 - - [09/Aug/2025 18:30:39] "OPTIONS /api/send-email-smart HTTP/1.1" 200 -
+[2025-08-09 18:30:40.644] [TIMING] Smart email endpoint called: mode=single, user_id=0c7bdc6c-f1ec-4206-96ea-069fea20e9ac
+[2025-08-09 18:30:40.656] [TIMING] Single email processing started for tkher@berkeley.edu
+[2025-08-09 18:30:41.156] 📧 Simulating email send to tkher@berkeley.edu
+[2025-08-09 18:30:41.158]    From:  <>
+[2025-08-09 18:30:41.159]    Subject: Let's Chat About Data Science
+[2025-08-09 18:30:41.159]    Body length: 628 characters
+[2025-08-09 18:30:41.265] ✅ Email sent successfully to tkher@berkeley.edu: gmail_1754789441_3786
+[2025-08-09 18:30:41.776] [TIMING] Single email completed in 1.12s
+2025-08-09 18:30:41,778 [INFO] 127.0.0.1 - - [09/Aug/2025 18:30:41] "POST /api/send-email-smart HTTP/1.1" 200 -
+2025-08-09 18:31:16,278 [INFO] 127.0.0.1 - - [09/Aug/2025 18:31:16] "OPTIONS /api/send-email-smart HTTP/1.1" 200 -
+[2025-08-09 18:31:17.104] [TIMING] Smart email endpoint called: mode=multiple, user_id=0c7bdc6c-f1ec-4206-96ea-069fea20e9ac
+[2025-08-09 18:31:17.106] [TIMING] Multiple email processing started
+[2025-08-09 18:31:17.108] 📧 Parsed 2 emails: ['tkher@berkeley.edu', 'tanishkher@gmail.com']
+[2025-08-09 18:31:17.474] 📧 Simulating email send to tkher@berkeley.edu
+[2025-08-09 18:31:17.476]    From:  <>
+[2025-08-09 18:31:17.480]    Subject: Let's Talk Data Science Careers
+[2025-08-09 18:31:17.480]    Body length: 674 characters
+[2025-08-09 18:31:17.587] ✅ Email sent successfully to tkher@berkeley.edu: gmail_1754789477_2559
+[2025-08-09 18:31:17.589] 📧 Simulating email send to tanishkher@gmail.com
+[2025-08-09 18:31:17.589]    From:  <>
+[2025-08-09 18:31:17.589]    Subject: Let's Talk Data Science Careers
+[2025-08-09 18:31:17.594]    Body length: 674 characters
+[2025-08-09 18:31:17.696] ✅ Email sent successfully to tanishkher@gmail.com: gmail_1754789477_3710
+[2025-08-09 18:31:17.946] [TIMING] Multiple email processing completed in 0.84s
+[2025-08-09 18:31:17.946] 📊 Email results: 2/2 successful
+2025-08-09 18:31:17,954 [INFO] 127.0.0.1 - - [09/Aug/2025 18:31:17] "POST /api/send-email-smart HTTP/1.1" 200 -
+2025-08-09 18:50:59,153 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 18:51:00,139 [INFO]  * Restarting with stat
+2025-08-09 18:51:10,169 [WARNING]  * Debugger is active!
+2025-08-09 18:51:10,175 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 18:53:11,871 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:11] "OPTIONS /api/scrape-linkedin-batch HTTP/1.1" 200 -
+2025-08-09 18:53:16,420 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:16] "POST /api/scrape-linkedin-batch HTTP/1.1" 200 -
+2025-08-09 18:53:16,432 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:16] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:16.750] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:17.314] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:19.814] [TIMING] BRIGHTDATA BATCH CHECK completed in 2.50s
+2025-08-09 18:53:19,814 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:19] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:21,834 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:21] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:22.154] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:22.462] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:25.428] [TIMING] BRIGHTDATA BATCH CHECK completed in 2.97s
+2025-08-09 18:53:25,428 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:25] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:27,454 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:27] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:27.770] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:28.143] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:29.520] [TIMING] BRIGHTDATA BATCH CHECK completed in 1.38s
+2025-08-09 18:53:29,526 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:29] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:31.540] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:31.983] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:33.405] [TIMING] BRIGHTDATA BATCH CHECK completed in 1.42s
+2025-08-09 18:53:33,419 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:33] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:35,738 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:35] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:35.999] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:36.371] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:38.740] [TIMING] BRIGHTDATA BATCH CHECK completed in 2.37s
+2025-08-09 18:53:38,740 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:38] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:40,758 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:40] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:41.073] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:41.287] [TIMING] EXPONENTIAL BACKOFF: Need to wait 3.1s before next poll
+2025-08-09 18:53:41,287 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:41] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:43.305] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:43.862] [TIMING] EXPONENTIAL BACKOFF: Need to wait 0.5s before next poll
+2025-08-09 18:53:43,867 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:43] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:46,189 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:46] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:46.455] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:47.037] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:49.596] [TIMING] BRIGHTDATA BATCH CHECK completed in 2.56s
+2025-08-09 18:53:49,602 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:49] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:51,623 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:51] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:51.937] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:52.355] [TIMING] EXPONENTIAL BACKOFF: Need to wait 4.7s before next poll
+2025-08-09 18:53:52,355 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:52] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:54.371] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:54.920] [TIMING] EXPONENTIAL BACKOFF: Need to wait 2.1s before next poll
+2025-08-09 18:53:54,923 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:54] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 18:53:57,239 [INFO] 127.0.0.1 - - [09/Aug/2025 18:53:57] "OPTIONS /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+[2025-08-09 18:53:57.506] [TIMING] BATCH PROCESSING started for job_id: s_me514rbr2klougb32l
+[2025-08-09 18:53:58.097] [TIMING] BRIGHTDATA BATCH CHECK started
+[2025-08-09 18:53:59.422] [TIMING] BRIGHTDATA BATCH CHECK completed in 1.33s
+[2025-08-09 18:53:59.424] BrightData batch job completed, got 1 profiles
+[2025-08-09 18:53:59.424] [TIMING] USER SETTINGS FETCH started
+[2025-08-09 18:53:59.836] [TIMING] USER SETTINGS FETCH completed in 0.41s
+[2025-08-09 18:54:00.149] 📏 Profile validation - Raw size: 3773 characters
+[2025-08-09 18:54:00.153] DEBUG: Raw experience data: [{'title': 'Software Engineer Intern', 'location': 'Redmond, Washington, United States', 'description': 'Enhancing traceability of Azure hardware', 'description_html': 'Enhancing traceability of Azure hardware <!---->', 'start_date': 'May 2025', 'end_date': 'Present', 'company': 'Microsoft', 'company_id': 'microsoft', 'url': 'https://www.linkedin.com/company/microsoft', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/D560BAQH32RJQCl3dDQ/company-logo_100_100/B56ZYQ0mrGGoAU-/0/1744038948046/microsoft_logo?e=2147483647&v=beta&t=rr_7_bFRKp6umQxIHErPOZHtR8dMPIYeTjlKFdotJBY'}, {'title': 'Software Engineer', 'description': 'Dashboard visualizations for anti-diversion data', 'description_html': 'Dashboard visualizations for anti-diversion data <!---->', 'start_date': 'Sep 2024', 'end_date': 'Jan 2025', 'company': 'AMD', 'company_id': 'amd', 'url': 'https://www.linkedin.com/company/amd', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/C560BAQEkjpiqeCK9Ag/company-logo_100_100/company-logo_100_100/0/1654804896089/amd_logo?e=2147483647&v=beta&t=OOLbSXPNaujmjbGIAgkLVvRM-Hd9Ohm2wI0gwpY8_JM'}, {'title': 'Security Engineer', 'description': 'ML cyber threat-detection SIEM solution', 'description_html': 'ML cyber threat-detection SIEM solution <!---->', 'start_date': 'Feb 2024', 'end_date': 'May 2024', 'company': 'EY', 'company_id': 'ernstandyoung', 'url': 'https://uk.linkedin.com/company/ernstandyoung', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/C510BAQGpRhkpxp5A9A/company-logo_100_100/company-logo_100_100/0/1630570672166/ernstandyoung_logo?e=2147483647&v=beta&t=b0upZAfAhCLoq3ru166xwEzp681OHwS_p2jRguRs5Fo'}, {'title': 'Software Engineer Intern', 'description': 'Ingestion service & pipeline architecture', 'description_html': 'Ingestion service &amp; pipeline architecture <!---->', 'start_date': 'May 2023', 'end_date': 'Aug 2023', 'company': 'Cerevox', 'company_id': 'cerevox', 'url': 'https://www.linkedin.com/company/cerevox', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/D560BAQHor8ihPj6uhA/company-logo_100_100/company-logo_100_100/0/1694812051897/cerevox_logo?e=2147483647&v=beta&t=sZ7tWC0fCbLqRTutxQrhgxamEZ98Jk4P1j3Br8IONnM'}]
+[2025-08-09 18:54:00.156] DEBUG: Experience type: <class 'list'>
+[2025-08-09 18:54:00.156] DEBUG: Processing 4 experiences (limiting to 5)
+[2025-08-09 18:54:00.158] DEBUG: Experience 0: {'title': 'Software Engineer Intern', 'location': 'Redmond, Washington, United States', 'description': 'Enhancing traceability of Azure hardware', 'description_html': 'Enhancing traceability of Azure hardware <!---->', 'start_date': 'May 2025', 'end_date': 'Present', 'company': 'Microsoft', 'company_id': 'microsoft', 'url': 'https://www.linkedin.com/company/microsoft', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/D560BAQH32RJQCl3dDQ/company-logo_100_100/B56ZYQ0mrGGoAU-/0/1744038948046/microsoft_logo?e=2147483647&v=beta&t=rr_7_bFRKp6umQxIHErPOZHtR8dMPIYeTjlKFdotJBY'}
+[2025-08-09 18:54:00.160] DEBUG: Experience 1: {'title': 'Software Engineer', 'description': 'Dashboard visualizations for anti-diversion data', 'description_html': 'Dashboard visualizations for anti-diversion data <!---->', 'start_date': 'Sep 2024', 'end_date': 'Jan 2025', 'company': 'AMD', 'company_id': 'amd', 'url': 'https://www.linkedin.com/company/amd', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/C560BAQEkjpiqeCK9Ag/company-logo_100_100/company-logo_100_100/0/1654804896089/amd_logo?e=2147483647&v=beta&t=OOLbSXPNaujmjbGIAgkLVvRM-Hd9Ohm2wI0gwpY8_JM'}
+[2025-08-09 18:54:00.162] DEBUG: Experience 2: {'title': 'Security Engineer', 'description': 'ML cyber threat-detection SIEM solution', 'description_html': 'ML cyber threat-detection SIEM solution <!---->', 'start_date': 'Feb 2024', 'end_date': 'May 2024', 'company': 'EY', 'company_id': 'ernstandyoung', 'url': 'https://uk.linkedin.com/company/ernstandyoung', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/C510BAQGpRhkpxp5A9A/company-logo_100_100/company-logo_100_100/0/1630570672166/ernstandyoung_logo?e=2147483647&v=beta&t=b0upZAfAhCLoq3ru166xwEzp681OHwS_p2jRguRs5Fo'}
+[2025-08-09 18:54:00.162] DEBUG: Experience 3: {'title': 'Software Engineer Intern', 'description': 'Ingestion service & pipeline architecture', 'description_html': 'Ingestion service &amp; pipeline architecture <!---->', 'start_date': 'May 2023', 'end_date': 'Aug 2023', 'company': 'Cerevox', 'company_id': 'cerevox', 'url': 'https://www.linkedin.com/company/cerevox', 'company_logo_url': 'https://media.licdn.com/dms/image/v2/D560BAQHor8ihPj6uhA/company-logo_100_100/company-logo_100_100/0/1694812051897/cerevox_logo?e=2147483647&v=beta&t=sZ7tWC0fCbLqRTutxQrhgxamEZ98Jk4P1j3Br8IONnM'}
+[2025-08-09 18:54:00.165] DEBUG: Final parsed experiences: [{'title': 'Software Engineer Intern', 'company': 'Microsoft', 'duration': '', 'description': 'Enhancing traceability of Azure hardware'}, {'title': 'Software Engineer', 'company': 'AMD', 'duration': '', 'description': 'Dashboard visualizations for anti-diversion data'}, {'title': 'Security Engineer', 'company': 'EY', 'duration': '', 'description': 'ML cyber threat-detection SIEM solution'}, {'title': 'Software Engineer Intern', 'company': 'Cerevox', 'duration': '', 'description': 'Ingestion service & pipeline architecture'}]
+[2025-08-09 18:54:00.168] 📊 Parsed profile total size: 1021 characters
+[2025-08-09 18:54:00.171] [TIMING] APOLLO BULK ENRICHMENT started for 1 URLs
+[2025-08-09 18:54:00.171] 🔗 Using 1 ORIGINAL LinkedIn URLs for bulk Apollo enrichment
+[2025-08-09 18:54:00.171] 🔗 Original URLs: ['https://www.linkedin.com/in/kimywu/']
+[2025-08-09 18:54:00.171] 🚀 Starting bulk Apollo enrichment for 1 profiles
+[2025-08-09 18:54:00.171] 🔗 Profile 1: LinkedIn URL = 'https://www.linkedin.com/in/kimywu/'
+[2025-08-09 18:54:00.171] ✅ Profile 1: Added to Apollo batch
+[2025-08-09 18:54:00.171] � Apollo bulk enrichment API call:
+[2025-08-09 18:54:00.171]    URL: https://api.apollo.io/api/v1/people/bulk_match
+[2025-08-09 18:54:00.185]    Payload: {
+  "reveal_personal_emails": true,
+  "details": [
+    {
+      "linkedin_url": "https://www.linkedin.com/in/kimywu/"
+    }
+  ]
+}
+[2025-08-09 18:54:00.189]    API Key: 936dXfreOO...
+[2025-08-09 18:54:00.860] 📡 Apollo bulk API response status: 200
+[2025-08-09 18:54:00.864] � Apollo bulk response data: {
+  "status": "success",
+  "error_code": null,
+  "error_message": null,
+  "total_requested_enrichments": 1,
+  "unique_enriched_records": 1,
+  "missing_records": 0,
+  "credits_consumed": 1,
+  "matches": [
+    {
+      "id": "6128f343495fa900015b2a1c",
+      "first_name": "Kimberly",
+      "last_name": "W",
+      "name": "Kimberly W",
+      "linkedin_url": null,
+      "title": "Software Engineer Intern",
+      "email_status": "verified",
+      "photo_url": "https://media.licdn.com/dms/image/v2/D5603AQF7qNZMidgU4g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1699002157014?e=2147483647&v=beta&t=XhU0xRbxu5DVmVpE-oN_XOa1I0_zrR25FPxty_1QsdE",
+      "twitter_url": null,
+      "github_url": null,
+      "facebook_url": null,
+      "extrapolated_email_confidence": null,
+      "headline": "Software Engineer Intern",
+      "email": "kwu@microsoft.com",
+      "organization_id": "62337760d02af100a5ca2468",
+      "employment_history": [
+        {
+          "_id": "68885956090e63000139ec1d",
+          "created_at": null,
+          "current": true,
+          "degree": null,
+          "description": null,
+          "emails": null,
+          "end_date": null,
+          "grade_level": null,
+          "kind": null,
+          "major": null,
+          "organization_id": "62337760d02af100a5ca2468",
+          "organization_name": "Microsoft",
+          "raw_address": null,
+          "start_date": "2025-05-01",
+          "title": "Software Engineer Intern",
+          "updated_at": null,
+          "id": "68885956090e63000139ec1d",
+          "key": "68885956090e63000139ec1d"
+        },
+        {
+          "_id": "68885956090e63000139ec1e",
+          "created_at": null,
+          "current": false,
+          "degree": null,
+          "description": null,
+          "emails": null,
+          "end_date": "2025-01-01",
+          "grade_level": null,
+          "kind": null,
+          "major": null,
+          "organization_id": "5ed55aa62ad2940001470627",
+          "organization_name": "AMD",
+          "raw_address": null,
+          "start_date": "2024-09-01",
+          "title": "Software Engineer",
+          "updated_at": null,
+          "id": "68885956090e63000139ec1e",
+          "key": "68885956090e63000139ec1e"
+        },
+        {
+          "_id": "68885956090e63000139ec1f",
+          "created_at": null,
+          "current": false,
+          "degree": null,
+          "description": null,
+          "emails": null,
+          "end_date": "2024-05-01",
+          "grade_level": null,
+          "kind": null,
+          "major": null,
+          "organization_id": "61b08f747970ba00010fcfa6",
+          "organization_name": "EY",
+          "raw_address": null,
+          "start_date": "2024-02-01",
+          "title": "Security Engineer",
+          "updated_at": null,
+          "id": "68885956090e63000139ec1f",
+          "key": "68885956090e63000139ec1f"
+        },
+        {
+          "_id": "68885956090e63000139ec20",
+          "created_at": null,
+          "current": false,
+          "degree": null,
+          "description": null,
+          "emails": null,
+          "end_date": "2023-08-01",
+          "grade_level": null,
+          "kind": null,
+          "major": null,
+          "organization_id": "646da00e6b9d1000d0ff8183",
+          "organization_name": "Cerevox",
+          "raw_address": null,
+          "start_date": "2023-05-01",
+          "title": "Software Engineer Intern",
+          "updated_at": null,
+          "id": "68885956090e63000139ec20",
+          "key": "68885956090e63000139ec20"
+        }
+      ],
+      "state": "California",
+      "city": "San Francisco",
+      "country": "United States",
+      "restricted": true,
+      "organization": {
+        "id": "62337760d02af100a5ca2468",
+        "name": "Microsoft",
+        "website_url": "http://www.microsoft.com",
+        "blog_url": null,
+        "angellist_url": null,
+        "linkedin_url": "http://www.linkedin.com/company/microsoft",
+        "twitter_url": "https://twitter.com/microsoft",
+        "facebook_url": "https://facebook.com/Microsoft",
+        "primary_phone": {
+          "number": "+1 800-642-7676",
+          "source": "Scraped",
+          "sanitized_number": "+18006427676"
+        },
+        "languages": [
+          "English"
+        ],
+        "alexa_ranking": 32,
+        "phone": "+1 800-642-7676",
+        "linkedin_uid": "1035",
+        "founded_year": 1975,
+        "publicly_traded_symbol": "MSFT",
+        "publicly_traded_exchange": "nasdaq",
+        "logo_url": "https://zenprospect-production.s3.amazonaws.com/uploads/pictures/686de8ed416b0e0001304517/picture",
+        "crunchbase_url": null,
+        "primary_domain": "microsoft.com",
+        "sanitized_phone": "+18006427676",
+        "market_cap": "3880.4B",
+        "industry": "information technology & services",
+        "estimated_num_employees": 228000,
+        "keywords": [
+          "business software",
+          "developer tools",
+          "home",
+          "educational software",
+          "tablets",
+          "search",
+          "advertising",
+          "servers",
+          "windows operating system",
+          "windows applications",
+          "platforms",
+          "smartphones",
+          "cloud computing",
+          "quantum computing",
+          "future of work",
+          "productivity",
+          "ai",
+          "artificial intelligence",
+          "machine learning",
+          "laptops",
+          "mixed reality",
+          "virtual reality",
+          "gaming",
+          "developers",
+          "it professional",
+          "digital marketing",
+          "computer software: prepackaged software",
+          "technology",
+          "software development",
+          "customer engagement",
+          "it infrastructure",
+          "collaboration software",
+          "ai and machine learning",
+          "enterprise software",
+          "microsoft surface hub",
+          "business solutions",
+          "microsoft intune",
+          "azure cloud",
+          "remote work tools",
+          "microsoft copilot",
+          "it management",
+          "microsoft dynamics 365",
+          "microsoft power bi",
+          "azure ai services",
+          "microsoft forms",
+          "microsoft viva",
+          "microsoft bookings",
+          "cloud services",
+          "microsoft edge browser",
+          "consumer electronics",
+          "digital transformation",
+          "development tools",
+          "server applications",
+          "information technology and services",
+          "business intelligence",
+          "hardware manufacturing",
+          "gaming and entertainment",
+          "productivity applications",
+          "partner network",
+          "microsoft for education",
+          "microsoft certified partners",
+          "hybrid work solutions",
+          "enterprise solutions",
+          "microsoft power platform",
+          "global presence",
+          "microsoft education solutions",
+          "microsoft defender",
+          "microsoft stream",
+          "microsoft endpoint manager",
+          "microsoft for government",
+          "microsoft 365",
+          "microsoft store",
+          "gaming consoles",
+          "data analytics",
+          "digital workplace",
+          "microsoft partner network",
+          "surface devices",
+          "software licensing",
+          "hardware sales",
+          "microsoft cloud solution provider",
+          "microsoft for startups",
+          "windows os",
+          "microsoft to do",
+          "online advertising",
+          "microsoft whiteboard",
+          "microsoft planner",
+          "microsoft teams",
+          "cybersecurity solutions",
+          "microsoft hololens",
+          "xbox gaming",
+          "cybersecurity",
+          "b2b",
+          "b2c",
+          "b2b2c",
+          "e-commerce",
+          "d2c",
+          "non-profit",
+          "government",
+          "consulting",
+          "services",
+          "retail",
+          "enterprises",
+          "computer software",
+          "information technology & services",
+          "mobile devices",
+          "mobile",
+          "internet",
+          "games",
+          "marketing & advertising",
+          "consumers",
+          "hardware",
+          "analytics",
+          "consumer internet",
+          "nonprofit organization management",
+          "computers",
+          "electronics",
+          "mobile phones",
+          "shopping"
+        ],
+        "organization_revenue_printed": "270B",
+        "organization_revenue": 270010000000.0,
+        "industries": [
+          "information technology & services",
+          "internet"
+        ],
+        "secondary_industries": [
+          "internet"
+        ],
+        "snippets_loaded": true,
+        "industry_tag_id": "5567cd4773696439b10b0000",
+        "industry_tag_hash": {
+          "information technology & services": "5567cd4773696439b10b0000",
+          "internet": "5567cd4d736964397e020000"
+        },
+        "retail_location_count": 96,
+        "raw_address": "1 Microsoft Way, Redmond, Washington 98052, US",
+        "street_address": "1 Microsoft Way",
+        "city": "Redmond",
+        "state": "Washington",
+        "postal_code": "98052",
+        "country": "United States",
+        "organization_headcount_six_month_growth": null,
+        "organization_headcount_twelve_month_growth": null,
+        "organization_headcount_twenty_four_month_growth": null
+      },
+      "account_id": "66677b90dfc86203a3bfc76a",
+      "account": {
+        "id": "66677b90dfc86203a3bfc76a",
+        "name": "Microsoft | Real Estate Broker",
+        "website_url": "http://www.microsoft.com",
+        "blog_url": null,
+        "angellist_url": null,
+        "linkedin_url": "http://www.linkedin.com/company/microsoft",
+        "twitter_url": "https://twitter.com/microsoft",
+        "facebook_url": "https://facebook.com/Microsoft",
+        "primary_phone": {
+          "number": "+1 800-642-7676",
+          "source": "Scraped",
+          "sanitized_number": "+18006427676"
+        },
+        "languages": [
+          "English"
+        ],
+        "alexa_ranking": 32,
+        "phone": "+1 425-882-8080",
+        "linkedin_uid": "1035",
+        "founded_year": 1975,
+        "publicly_traded_symbol": "MSFT",
+        "publicly_traded_exchange": "nasdaq",
+        "logo_url": "https://zenprospect-production.s3.amazonaws.com/uploads/pictures/686de8ed416b0e0001304517/picture",
+        "crunchbase_url": null,
+        "primary_domain": "microsoft.com",
+        "sanitized_phone": "+14258828080",
+        "market_cap": "3880.4B",
+        "raw_address": "1 microsoft way, redmond, washington 98052, us",
+        "street_address": "1 Microsoft Way",
+        "city": "Redmond",
+        "state": "Washington",
+        "country": "United States",
+        "postal_code": "98052",
+        "domain": "microsoft.com",
+        "team_id": "6666a3f8ae395c03a03b5668",
+        "organization_id": "62337760d02af100a5ca2468",
+        "account_stage_id": "6666a3f8ae395c03a03b5673",
+        "source": "chrome_extension_linkedin",
+        "original_source": "chrome_extension_linkedin",
+        "creator_id": "6666a3fbae395c03a03b57d6",
+        "owner_id": "6666a3fbae395c03a03b57d6",
+        "created_at": "2024-06-10T22:17:52.147Z",
+        "phone_status": "no_status",
+        "hubspot_id": null,
+        "salesforce_id": null,
+        "crm_owner_id": null,
+        "parent_account_id": null,
+        "account_playbook_statuses": [],
+        "existence_level": "full",
+        "label_ids": [],
+        "typed_custom_fields": {},
+        "custom_field_errors": null,
+        "modality": "account",
+        "source_display_name": "Added from LinkedIn",
+        "crm_record_url": null
+      },
+      "departments": [
+        "master_engineering_technical"
+      ],
+      "subdepartments": [
+        "engineering_technical",
+        "software_development"
+      ],
+      "seniority": "intern",
+      "functions": [
+        "engineering"
+      ],
+      "intent_strength": null,
+      "show_intent": false,
+      "email_domain_catchall": false,
+      "revealed_for_current_team": true,
+      "personal_emails": []
+    }
+  ]
+}
+[2025-08-09 18:54:00.873] 🔍 Found 1 matches in Apollo bulk response
+[2025-08-09 18:54:00.878] 📊 Processing match 1: {
+  "id": "6128f343495fa900015b2a1c",
+  "first_name": "Kimberly",
+  "last_name": "W",
+  "name": "Kimberly W",
+  "linkedin_url": null,
+  "title": "Software Engineer Intern",
+  "email_status": "verified",
+  "photo_url": "https://media.licdn.com/dms/image/v2/D5603AQF7qNZMidgU4g/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1699002157014?e=2147483647&v=beta&t=XhU0xRbxu5DVmVpE-oN_XOa1I0_zrR25FPxty_1QsdE",
+  "twitter_url": null,
+  "github_url": null,
+  "facebook_url": null,
+  "extrapolated_email_confidence": null,
+  "headline": "Software Engineer Intern",
+  "email": "kwu@microsoft.com",
+  "organization_id": "62337760d02af100a5ca2468",
+  "employment_history": [
+    {
+      "_id": "68885956090e63000139ec1d",
+      "created_at": null,
+      "current": true,
+      "degree": null,
+      "description": null,
+      "emails": null,
+      "end_date": null,
+      "grade_level": null,
+      "kind": null,
+      "major": null,
+      "organization_id": "62337760d02af100a5ca2468",
+      "organization_name": "Microsoft",
+      "raw_address": null,
+      "start_date": "2025-05-01",
+      "title": "Software Engineer Intern",
+      "updated_at": null,
+      "id": "68885956090e63000139ec1d",
+      "key": "68885956090e63000139ec1d"
+    },
+    {
+      "_id": "68885956090e63000139ec1e",
+      "created_at": null,
+      "current": false,
+      "degree": null,
+      "description": null,
+      "emails": null,
+      "end_date": "2025-01-01",
+      "grade_level": null,
+      "kind": null,
+      "major": null,
+      "organization_id": "5ed55aa62ad2940001470627",
+      "organization_name": "AMD",
+      "raw_address": null,
+      "start_date": "2024-09-01",
+      "title": "Software Engineer",
+      "updated_at": null,
+      "id": "68885956090e63000139ec1e",
+      "key": "68885956090e63000139ec1e"
+    },
+    {
+      "_id": "68885956090e63000139ec1f",
+      "created_at": null,
+      "current": false,
+      "degree": null,
+      "description": null,
+      "emails": null,
+      "end_date": "2024-05-01",
+      "grade_level": null,
+      "kind": null,
+      "major": null,
+      "organization_id": "61b08f747970ba00010fcfa6",
+      "organization_name": "EY",
+      "raw_address": null,
+      "start_date": "2024-02-01",
+      "title": "Security Engineer",
+      "updated_at": null,
+      "id": "68885956090e63000139ec1f",
+      "key": "68885956090e63000139ec1f"
+    },
+    {
+      "_id": "68885956090e63000139ec20",
+      "created_at": null,
+      "current": false,
+      "degree": null,
+      "description": null,
+      "emails": null,
+      "end_date": "2023-08-01",
+      "grade_level": null,
+      "kind": null,
+      "major": null,
+      "organization_id": "646da00e6b9d1000d0ff8183",
+      "organization_name": "Cerevox",
+      "raw_address": null,
+      "start_date": "2023-05-01",
+      "title": "Software Engineer Intern",
+      "updated_at": null,
+      "id": "68885956090e63000139ec20",
+      "key": "68885956090e63000139ec20"
+    }
+  ],
+  "state": "California",
+  "city": "San Francisco",
+  "country": "United States",
+  "restricted": true,
+  "organization": {
+    "id": "62337760d02af100a5ca2468",
+    "name": "Microsoft",
+    "website_url": "http://www.microsoft.com",
+    "blog_url": null,
+    "angellist_url": null,
+    "linkedin_url": "http://www.linkedin.com/company/microsoft",
+    "twitter_url": "https://twitter.com/microsoft",
+    "facebook_url": "https://facebook.com/Microsoft",
+    "primary_phone": {
+      "number": "+1 800-642-7676",
+      "source": "Scraped",
+      "sanitized_number": "+18006427676"
+    },
+    "languages": [
+      "English"
+    ],
+    "alexa_ranking": 32,
+    "phone": "+1 800-642-7676",
+    "linkedin_uid": "1035",
+    "founded_year": 1975,
+    "publicly_traded_symbol": "MSFT",
+    "publicly_traded_exchange": "nasdaq",
+    "logo_url": "https://zenprospect-production.s3.amazonaws.com/uploads/pictures/686de8ed416b0e0001304517/picture",
+    "crunchbase_url": null,
+    "primary_domain": "microsoft.com",
+    "sanitized_phone": "+18006427676",
+    "market_cap": "3880.4B",
+    "industry": "information technology & services",
+    "estimated_num_employees": 228000,
+    "keywords": [
+      "business software",
+      "developer tools",
+      "home",
+      "educational software",
+      "tablets",
+      "search",
+      "advertising",
+      "servers",
+      "windows operating system",
+      "windows applications",
+      "platforms",
+      "smartphones",
+      "cloud computing",
+      "quantum computing",
+      "future of work",
+      "productivity",
+      "ai",
+      "artificial intelligence",
+      "machine learning",
+      "laptops",
+      "mixed reality",
+      "virtual reality",
+      "gaming",
+      "developers",
+      "it professional",
+      "digital marketing",
+      "computer software: prepackaged software",
+      "technology",
+      "software development",
+      "customer engagement",
+      "it infrastructure",
+      "collaboration software",
+      "ai and machine learning",
+      "enterprise software",
+      "microsoft surface hub",
+      "business solutions",
+      "microsoft intune",
+      "azure cloud",
+      "remote work tools",
+      "microsoft copilot",
+      "it management",
+      "microsoft dynamics 365",
+      "microsoft power bi",
+      "azure ai services",
+      "microsoft forms",
+      "microsoft viva",
+      "microsoft bookings",
+      "cloud services",
+      "microsoft edge browser",
+      "consumer electronics",
+      "digital transformation",
+      "development tools",
+      "server applications",
+      "information technology and services",
+      "business intelligence",
+      "hardware manufacturing",
+      "gaming and entertainment",
+      "productivity applications",
+      "partner network",
+      "microsoft for education",
+      "microsoft certified partners",
+      "hybrid work solutions",
+      "enterprise solutions",
+      "microsoft power platform",
+      "global presence",
+      "microsoft education solutions",
+      "microsoft defender",
+      "microsoft stream",
+      "microsoft endpoint manager",
+      "microsoft for government",
+      "microsoft 365",
+      "microsoft store",
+      "gaming consoles",
+      "data analytics",
+      "digital workplace",
+      "microsoft partner network",
+      "surface devices",
+      "software licensing",
+      "hardware sales",
+      "microsoft cloud solution provider",
+      "microsoft for startups",
+      "windows os",
+      "microsoft to do",
+      "online advertising",
+      "microsoft whiteboard",
+      "microsoft planner",
+      "microsoft teams",
+      "cybersecurity solutions",
+      "microsoft hololens",
+      "xbox gaming",
+      "cybersecurity",
+      "b2b",
+      "b2c",
+      "b2b2c",
+      "e-commerce",
+      "d2c",
+      "non-profit",
+      "government",
+      "consulting",
+      "services",
+      "retail",
+      "enterprises",
+      "computer software",
+      "information technology & services",
+      "mobile devices",
+      "mobile",
+      "internet",
+      "games",
+      "marketing & advertising",
+      "consumers",
+      "hardware",
+      "analytics",
+      "consumer internet",
+      "nonprofit organization management",
+      "computers",
+      "electronics",
+      "mobile phones",
+      "shopping"
+    ],
+    "organization_revenue_printed": "270B",
+    "organization_revenue": 270010000000.0,
+    "industries": [
+      "information technology & services",
+      "internet"
+    ],
+    "secondary_industries": [
+      "internet"
+    ],
+    "snippets_loaded": true,
+    "industry_tag_id": "5567cd4773696439b10b0000",
+    "industry_tag_hash": {
+      "information technology & services": "5567cd4773696439b10b0000",
+      "internet": "5567cd4d736964397e020000"
+    },
+    "retail_location_count": 96,
+    "raw_address": "1 Microsoft Way, Redmond, Washington 98052, US",
+    "street_address": "1 Microsoft Way",
+    "city": "Redmond",
+    "state": "Washington",
+    "postal_code": "98052",
+    "country": "United States",
+    "organization_headcount_six_month_growth": null,
+    "organization_headcount_twelve_month_growth": null,
+    "organization_headcount_twenty_four_month_growth": null
+  },
+  "account_id": "66677b90dfc86203a3bfc76a",
+  "account": {
+    "id": "66677b90dfc86203a3bfc76a",
+    "name": "Microsoft | Real Estate Broker",
+    "website_url": "http://www.microsoft.com",
+    "blog_url": null,
+    "angellist_url": null,
+    "linkedin_url": "http://www.linkedin.com/company/microsoft",
+    "twitter_url": "https://twitter.com/microsoft",
+    "facebook_url": "https://facebook.com/Microsoft",
+    "primary_phone": {
+      "number": "+1 800-642-7676",
+      "source": "Scraped",
+      "sanitized_number": "+18006427676"
+    },
+    "languages": [
+      "English"
+    ],
+    "alexa_ranking": 32,
+    "phone": "+1 425-882-8080",
+    "linkedin_uid": "1035",
+    "founded_year": 1975,
+    "publicly_traded_symbol": "MSFT",
+    "publicly_traded_exchange": "nasdaq",
+    "logo_url": "https://zenprospect-production.s3.amazonaws.com/uploads/pictures/686de8ed416b0e0001304517/picture",
+    "crunchbase_url": null,
+    "primary_domain": "microsoft.com",
+    "sanitized_phone": "+14258828080",
+    "market_cap": "3880.4B",
+    "raw_address": "1 microsoft way, redmond, washington 98052, us",
+    "street_address": "1 Microsoft Way",
+    "city": "Redmond",
+    "state": "Washington",
+    "country": "United States",
+    "postal_code": "98052",
+    "domain": "microsoft.com",
+    "team_id": "6666a3f8ae395c03a03b5668",
+    "organization_id": "62337760d02af100a5ca2468",
+    "account_stage_id": "6666a3f8ae395c03a03b5673",
+    "source": "chrome_extension_linkedin",
+    "original_source": "chrome_extension_linkedin",
+    "creator_id": "6666a3fbae395c03a03b57d6",
+    "owner_id": "6666a3fbae395c03a03b57d6",
+    "created_at": "2024-06-10T22:17:52.147Z",
+    "phone_status": "no_status",
+    "hubspot_id": null,
+    "salesforce_id": null,
+    "crm_owner_id": null,
+    "parent_account_id": null,
+    "account_playbook_statuses": [],
+    "existence_level": "full",
+    "label_ids": [],
+    "typed_custom_fields": {},
+    "custom_field_errors": null,
+    "modality": "account",
+    "source_display_name": "Added from LinkedIn",
+    "crm_record_url": null
+  },
+  "departments": [
+    "master_engineering_technical"
+  ],
+  "subdepartments": [
+    "engineering_technical",
+    "software_development"
+  ],
+  "seniority": "intern",
+  "functions": [
+    "engineering"
+  ],
+  "intent_strength": null,
+  "show_intent": false,
+  "email_domain_catchall": false,
+  "revealed_for_current_team": true,
+  "personal_emails": []
+}
+[2025-08-09 18:54:00.888] 📧 Match 1 email: 'kwu@microsoft.com'
+[2025-08-09 18:54:00.891] ✅ Bulk found email for Unknown: kwu@microsoft.com
+[2025-08-09 18:54:00.891] 🎉 Bulk Apollo processing complete. Found emails for 1/1 profiles
+[2025-08-09 18:54:00.891] 🔗 Mapped Apollo result for https://www.linkedin.com/in/kimywu/: kwu@microsoft.com
+[2025-08-09 18:54:00.897] [TIMING] APOLLO BULK ENRICHMENT completed in 0.73s
+[2025-08-09 18:54:00.899] [TIMING] EMAIL GENERATION started for 1 profiles
+[2025-08-09 18:54:00.899] ✅ Exact URL match found for https://www.linkedin.com/in/kimywu/: kwu@microsoft.com
+[2025-08-09 18:54:00.901] 📊 Formatted profile size: 469 characters for Kimberly Wu
+[2025-08-09 18:54:01.111] [TIMING] Starting async wrapper for 1 profiles
+[2025-08-09 18:54:01.128] [TIMING] Starting async processing for 1 profiles
+[2025-08-09 18:54:01.138] [TIMING] Will make 2 OpenAI calls (1 emails + 1 subjects) for 1 profiles
+[2025-08-09 18:54:01.138] [TIMING] Created 2 async tasks using existing functions
+[2025-08-09 18:54:01.138] [TIMING] Starting 2 OpenAI calls in parallel
+2025-08-09 18:54:03,113 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-09 18:54:03,827 [INFO] HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-08-09 18:54:03.827] [TIMING] Completed 2 OpenAI calls in 2.69s (avg: 1.34s per call)
+[2025-08-09 18:54:03.840] [TIMING] Async processing completed for 1 profiles
+[2025-08-09 18:54:03.840] [TIMING] Async wrapper completed successfully
+[2025-08-09 18:54:03.843] [TIMING] EMAIL GENERATION completed in 2.94s
+[2025-08-09 18:54:03.843] [TIMING] TOTAL BATCH PROCESSING completed in 6.34s
+2025-08-09 18:54:03,843 [INFO] 127.0.0.1 - - [09/Aug/2025 18:54:03] "GET /api/scrape-batch-result/s_me514rbr2klougb32l HTTP/1.1" 200 -
+2025-08-09 19:07:33,297 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:07:34,204 [INFO]  * Restarting with stat
+2025-08-09 19:07:43,565 [WARNING]  * Debugger is active!
+2025-08-09 19:07:43,576 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:08:03,499 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.10.3:5000
+2025-08-09 19:08:03,499 [INFO] [33mPress CTRL+C to quit[0m
+2025-08-09 19:08:03,499 [INFO]  * Restarting with stat
+2025-08-09 19:08:13,147 [WARNING]  * Debugger is active!
+2025-08-09 19:08:13,147 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:10:29,467 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:10:30,258 [INFO]  * Restarting with stat
+2025-08-09 19:10:39,138 [WARNING]  * Debugger is active!
+2025-08-09 19:10:39,155 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:10:58,394 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.10.3:5000
+2025-08-09 19:10:58,394 [INFO] [33mPress CTRL+C to quit[0m
+2025-08-09 19:10:58,400 [INFO]  * Restarting with stat
+2025-08-09 19:11:06,547 [WARNING]  * Debugger is active!
+2025-08-09 19:11:06,547 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:13:12,509 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:13:13,080 [INFO]  * Restarting with stat
+2025-08-09 19:13:22,833 [WARNING]  * Debugger is active!
+2025-08-09 19:13:22,835 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:13:30,319 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:13:31,070 [INFO]  * Restarting with stat
+2025-08-09 19:13:40,826 [WARNING]  * Debugger is active!
+2025-08-09 19:13:40,830 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:14:26,894 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.10.3:5000
+2025-08-09 19:14:26,894 [INFO] [33mPress CTRL+C to quit[0m
+2025-08-09 19:14:26,901 [INFO]  * Restarting with stat
+2025-08-09 19:14:35,737 [WARNING]  * Debugger is active!
+2025-08-09 19:14:35,742 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:18:23,155 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:18:23,842 [INFO]  * Restarting with stat
+2025-08-09 19:18:32,322 [WARNING]  * Debugger is active!
+2025-08-09 19:18:32,336 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:18:39,668 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:18:40,361 [INFO]  * Restarting with stat
+2025-08-09 19:18:48,765 [WARNING]  * Debugger is active!
+2025-08-09 19:18:48,773 [INFO]  * Debugger PIN: 881-605-601
+2025-08-09 19:25:03,669 [INFO]  * Detected change in 'C:\\Users\\tlocal\\Desktop\\chromeEmail\\backend\\app.py', reloading
+2025-08-09 19:25:04,577 [INFO]  * Restarting with stat
+2025-08-09 19:26:45,762 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.20.10.3:5000
+2025-08-09 19:26:45,762 [INFO] [33mPress CTRL+C to quit[0m

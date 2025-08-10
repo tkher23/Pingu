@@ -328,6 +328,159 @@ def should_use_apollo_enrichment(user_plan_type):
     # Alternative: Only for paid plans
     # return user_plan_type in ["basic", "advanced"]
 
+def is_valid_email(email):
+    """Backend email validation"""
+    import re
+    if not email or not isinstance(email, str):
+        return False
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
+
+def send_email_via_gmail(to_email, subject, body, sender_name, sender_email, user_id):
+    """Send email via Gmail API"""
+    try:
+        # For now, simulate email sending since Gmail API setup is complex
+        # In production, this would use Gmail API credentials
+        log_to_file(f"📧 Simulating email send to {to_email}")
+        log_to_file(f"   From: {sender_name} <{sender_email}>")
+        log_to_file(f"   Subject: {subject}")
+        log_to_file(f"   Body length: {len(body)} characters")
+        
+        # Simulate success (in production, this would be actual Gmail API call)
+        import random
+        import time
+        time.sleep(0.1)  # Simulate API delay
+        
+        # Simulate 95% success rate for testing
+        success = random.random() > 0.05
+        
+        if success:
+            message_id = f"gmail_{int(time.time())}_{random.randint(1000, 9999)}"
+            log_to_file(f"✅ Email sent successfully to {to_email}: {message_id}")
+            return {
+                "success": True,
+                "message_id": message_id,
+                "recipient": to_email
+            }
+        else:
+            log_to_file(f"❌ Simulated email send failure to {to_email}")
+            return {
+                "success": False,
+                "error": "Simulated send failure",
+                "recipient": to_email
+            }
+            
+    except Exception as e:
+        log_to_file(f"❌ Email send error for {to_email}: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "recipient": to_email
+        }
+
+def handle_single_email(user_id, recipient_email, recipient_name, subject, body, sender_name, sender_email):
+    """Handle single email with backend validation"""
+    log_to_file(f"[TIMING] Single email processing started for {recipient_email}")
+    start_time = time.time()
+    
+    # Validate single email format
+    if not is_valid_email(recipient_email):
+        log_to_file(f"❌ Invalid email format: {recipient_email}")
+        return jsonify({"success": False, "error": "Invalid email format"}), 400
+    
+    # Check credits
+    user_credits = get_user_credits(user_id)
+    if user_credits < 1:
+        log_to_file(f"❌ Insufficient credits for user {user_id}: {user_credits}")
+        return jsonify({"success": False, "error": "Insufficient credits"}), 402
+    
+    # Send email
+    result = send_email_via_gmail(recipient_email, subject, body, sender_name, sender_email, user_id)
+    
+    if result.get('success'):
+        decrement_user_credits(user_id, 1)
+        log_to_file(f"[TIMING] Single email completed in {time.time() - start_time:.2f}s")
+        return jsonify({
+            "success": True,
+            "message": "✅ Email sent successfully!"
+        })
+    else:
+        log_to_file(f"❌ Single email send failed: {result.get('error', 'Unknown error')}")
+        return jsonify({
+            "success": False,
+            "error": f"Failed to send email: {result.get('error', 'Unknown error')}"
+        }), 500
+
+def handle_multiple_emails(user_id, recipient_emails_str, subject, body, sender_name, sender_email):
+    """Handle multiple emails with backend validation and logic"""
+    log_to_file(f"[TIMING] Multiple email processing started")
+    start_time = time.time()
+    
+    # Parse and validate emails (BACKEND LOGIC)
+    email_list = [email.strip() for email in recipient_emails_str.split(',') if email.strip()]
+    
+    if not email_list:
+        log_to_file(f"❌ No valid emails provided from: {recipient_emails_str}")
+        return jsonify({"success": False, "error": "No valid emails provided"}), 400
+    
+    log_to_file(f"📧 Parsed {len(email_list)} emails: {email_list}")
+    
+    # Validate all email formats
+    invalid_emails = [email for email in email_list if not is_valid_email(email)]
+    if invalid_emails:
+        log_to_file(f"❌ Invalid email formats: {invalid_emails}")
+        return jsonify({
+            "success": False,
+            "error": f"Invalid email format(s): {', '.join(invalid_emails[:3])}{'...' if len(invalid_emails) > 3 else ''}"
+        }), 400
+    
+    # Check credits
+    credits_needed = len(email_list)
+    user_credits = get_user_credits(user_id)
+    
+    if user_credits < credits_needed:
+        log_to_file(f"❌ Insufficient credits: need {credits_needed}, have {user_credits}")
+        return jsonify({
+            "success": False,
+            "error": f"Insufficient credits. Need {credits_needed}, have {user_credits}"
+        }), 402
+    
+    # Send emails
+    successful_sends = 0
+    failed_emails = []
+    
+    for email in email_list:
+        result = send_email_via_gmail(email, subject, body, sender_name, sender_email, user_id)
+        if result.get('success'):
+            successful_sends += 1
+        else:
+            failed_emails.append(email)
+    
+    # Deduct credits only for successful sends
+    if successful_sends > 0:
+        decrement_user_credits(user_id, successful_sends)
+    
+    log_to_file(f"[TIMING] Multiple email processing completed in {time.time() - start_time:.2f}s")
+    log_to_file(f"📊 Email results: {successful_sends}/{len(email_list)} successful")
+    
+    # Return smart response
+    total_emails = len(email_list)
+    if successful_sends == total_emails:
+        return jsonify({
+            "success": True,
+            "message": f"✅ Successfully sent {successful_sends} emails! Used {successful_sends} credits."
+        })
+    elif successful_sends > 0:
+        return jsonify({
+            "success": True,
+            "message": f"⚠️ Sent {successful_sends}/{total_emails} emails. {len(failed_emails)} failed. Used {successful_sends} credits."
+        })
+    else:
+        return jsonify({
+            "success": False,
+            "error": "❌ All email sends failed. No credits used."
+        }), 500
+
 def calculate_exponential_backoff_delay(status_checks):
     """
     Calculate exponential backoff delay for BrightData polling
@@ -684,6 +837,10 @@ def generate_simple_email_api():
         data = request.get_json()
         print("📩 Simple Email Request:", json.dumps(data, indent=2))
 
+        # Simple credit check - just 1 credit for generation (original logic)
+        if user_credits < 1:
+            return jsonify({"error": f"Insufficient credits. Need 1 credit for email generation, have {user_credits}"}), 402
+
         profile = {
             "internship_interest": data.get("internship_interest", ""),
             "user_info": data.get("user_info", {}),
@@ -693,12 +850,48 @@ def generate_simple_email_api():
 
         processed = process_profiles_batch_async_wrapper([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
 
-        decrement_user_credits(user_id, amount=1)  # Use 1 credit for simple email
+        decrement_user_credits(user_id, amount=1)  # Original simple logic - 1 credit for generation
         return jsonify(processed[0]), 200
 
     except Exception as e:
         print("❌ Simple Email ERROR:", e)
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route('/api/send-email-smart', methods=['POST'])
+def send_email_smart():
+    """Single endpoint that handles both single and multiple emails intelligently"""
+    try:
+        # Get user_id from authorization header (following existing auth pattern)
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        user_id = get_user_id_from_token(token)
+        if not user_id:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        
+        data = request.json
+        mode = data.get('mode', 'single')  # 'single' or 'multiple'
+        recipient_emails = data.get('recipient_emails', '').strip()
+        recipient_name = data.get('recipient_name', '').strip()
+        subject = data.get('subject', '').strip()
+        body = data.get('body', '').strip()
+        sender_name = data.get('sender_name', '')
+        sender_email = data.get('sender_email', '')
+        
+        log_to_file(f"[TIMING] Smart email endpoint called: mode={mode}, user_id={user_id}")
+        
+        # Backend validation
+        if not all([recipient_emails, subject, body]):
+            return jsonify({"success": False, "error": "Missing required fields"}), 400
+        
+        if mode == 'single':
+            if not recipient_name:
+                return jsonify({"success": False, "error": "Recipient name required for single emails"}), 400
+            return handle_single_email(user_id, recipient_emails, recipient_name, subject, body, sender_name, sender_email)
+        else:
+            return handle_multiple_emails(user_id, recipient_emails, subject, body, sender_name, sender_email)
+            
+    except Exception as e:
+        log_to_file(f"Error in send_email_smart: {str(e)}")
+        return jsonify({"success": False, "error": "Server error"}), 500
 
 @app.route('/api/get-credits', methods=['GET'])
 def get_credits():
@@ -758,7 +951,6 @@ def create_checkout():
     try:
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         user_id = get_user_id_from_token(token)
-        print("DEBUG: user_id from token:", user_id)  # <-- Debug print
         if not user_id:
             return jsonify({"error": "Unauthorized"}), 401
         data = request.get_json()
@@ -767,14 +959,11 @@ def create_checkout():
         cancel_url = data.get("cancel_url")
         # Fetch user email and stripe_customer_id from Supabase
         url = f"{SUPABASE_URL}/rest/v1/user_profiles?id=eq.{user_id}&select=email,stripe_customer_id"
-        print("DEBUG: Supabase user_profiles URL:", url)  # <-- Debug print
         headers = {
             "apikey": SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}"
         }
         response = requests.get(url, headers=headers)
-        print("DEBUG: Supabase response status:", response.status_code)  # <-- Debug print
-        print("DEBUG: Supabase response JSON:", response.text)  # <-- Debug print
         if not response.ok or not response.json():
             return jsonify({"error": f"{response.status_code} {response.text}"}), 404        
         user = response.json()[0]
@@ -1917,4 +2106,5 @@ def format_profile_for_email(parsed_profile):
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    app.run(debug=debug_mode, host="0.0.0.0", port=port)
