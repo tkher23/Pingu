@@ -18,10 +18,13 @@ const useGmailSender = () => {
       signature = primarySendAs?.signature || '';
     } catch {}
 
-    // Detect if signature is HTML
+    // Always send as HTML to preserve line breaks and formatting
+    const contentType = 'text/html; charset=UTF-8';
+    
+    // Convert line breaks to HTML and combine with signature
+    const htmlBody = body.replace(/\n/g, '<br>');
     const isHtml = signature && /<[a-z][\s\S]*>/i.test(signature);
-    const contentType = isHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8';
-    const fullBody = isHtml ? `${body}<br><br>${signature}` : `${body}\n\n${signature}`;
+    const fullBody = isHtml ? `${htmlBody}<br><br>${signature}` : `${htmlBody}<br><br>${signature.replace(/\n/g, '<br>')}`;
 
     // Proper RFC 5322 message formatting
     const message = [

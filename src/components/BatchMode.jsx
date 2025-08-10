@@ -460,25 +460,14 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
 
   return (
     <>
-      <Modal
-        opened={showOnboarding}
-        onClose={handleCloseOnboarding}
-        title="Batch Mode"
-        centered
-        overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
-      >
-        <Text size="md" mb="md">
-          Welcome to Batch Mode! Here, Pingu creates multiple emails at once. Simply add LinkedIn profiles (click "Add Current LinkedIn Profile"). Optionally add company information and recipient-specific details, then hit "Process LinkedIn Profiles" to generate personalized emails for everyone and find their addresses. Perfect for large outreach campaigns!
-        </Text>
-        <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
-      </Modal>
+      {/* Removed welcome modal - users can figure out batch mode intuitively */}
       <Paper p="md" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
       <Stack spacing="md">
         {/* Header */}
         <Group position="apart" align="center">
           <Group spacing="xs">
             <Text size="lg" weight={700} color="#5fafde">📦</Text>
-            <Text weight={600} size="lg">Batch Mode</Text>
+            <Text weight={600} size="lg">Advanced Mode</Text>
             <Badge color="purple" size="sm" variant="light">Bulk Processing</Badge>
           </Group>
         </Group>

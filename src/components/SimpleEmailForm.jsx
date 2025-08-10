@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Group, TextInput, Textarea, Stack, CopyButton, Notification } from '@mantine/core';
+import { Button, Group, TextInput, Textarea, Stack, CopyButton, Notification, Switch, Paper, Text, Modal } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useGmailSender from '../hooks/useGmailSender';
 
@@ -21,6 +21,8 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
   const { profile, getProfile, error: profileError } = useProfile();
   const sendGmail = useGmailSender();
 
+  // Add toggle state for multiple recipients
+  const [isMultipleRecipients, setIsMultipleRecipients] = useState(false);
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [interest, setInterest] = useState('');
@@ -31,6 +33,21 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
   const [hoveredGenerate, setHoveredGenerate] = useState(false);
   const [hoveredCopySubject, setHoveredCopySubject] = useState(false);
   const [hoveredCopyBody, setHoveredCopyBody] = useState(false);
+  const [hoveredSend, setHoveredSend] = useState(false);
+
+  // Add onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeenSimpleEmailOnboarding')) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenSimpleEmailOnboarding', 'true');
+  };
 
   useEffect(() => {
     getProfile();
@@ -73,6 +90,7 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
           company_interest: profile.company_interest || ''
         },
         recipient_name: recipientName.trim(),
+        recipient_emails: recipientEmail.trim(), // Add recipient emails for credit calculation
         internship_interest: interest.trim()
       };
       const subjectPayload = {
@@ -119,9 +137,47 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
       setSendStatus('Missing recipient email, subject, or body');
       return;
     }
+
+    if (!isMultipleRecipients && !recipientName) {
+      setSendStatus('Missing recipient name');
+      return;
+    }
+
     try {
-      await sendGmail(recipientEmail, subject, body);
-      setSendStatus('✅ Email sent!');
+      if (isMultipleRecipients) {
+        // Handle multiple emails
+        const emails = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
+        if (emails.length === 0) {
+          setSendStatus('❌ Please enter valid email addresses');
+          return;
+        }
+
+        setSendStatus(`📧 Sending to ${emails.length} recipients...`);
+        
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const email of emails) {
+          try {
+            await sendGmail(email, subject, body);
+            successCount++;
+          } catch (err) {
+            console.error(`Failed to send to ${email}:`, err);
+            failCount++;
+          }
+        }
+
+        if (failCount === 0) {
+          setSendStatus(`✅ All ${successCount} emails sent successfully!`);
+        } else {
+          setSendStatus(`⚠️ ${successCount} sent, ${failCount} failed`);
+        }
+      } else {
+        // Handle single email (original functionality)
+        await sendGmail(recipientEmail, subject, body);
+        setSendStatus('✅ Email sent!');
+      }
+      
       // Clear all fields and localStorage after send
       setRecipientName('');
       setRecipientEmail('');
@@ -134,26 +190,71 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
       localStorage.removeItem('se_subject');
       localStorage.removeItem('se_body');
     } catch (err) {
-      setSendStatus('❌ Send failed.');
+      console.error('Send error:', err);
+      setSendStatus('❌ Send failed: ' + err.message);
     }
     setTimeout(() => setSendStatus(''), 3000);
   };
 
   return (
-    <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
-      <Stack spacing="xl">
-        {(profileError || creditsError) && (
-          <Notification color="red" title="Error" mb="md">
-            {profileError && <div>Profile: {profileError.toString()}</div>}
-            {creditsError && <div>Credits: {creditsError.toString()}</div>}
-          </Notification>
+    <>
+      <Modal
+        opened={showOnboarding}
+        onClose={handleCloseOnboarding}
+        title="Simple Email"
+        centered
+        overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
+      >
+        <Text size="md" mb="md">
+          Welcome to Simple Email! Generate personalized emails quickly and send them to one or multiple recipients. 
+          <strong> Credits: 1 credit per recipient.</strong> Toggle between single and multiple recipient modes using the switch below.
+        </Text>
+        <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
+      </Modal>
+      
+      <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
+        <Stack spacing="xl">
+          {(profileError || creditsError) && (
+            <Notification color="red" title="Error" mb="md">
+              {profileError && <div>Profile: {profileError.toString()}</div>}
+              {creditsError && <div>Credits: {creditsError.toString()}</div>}
+            </Notification>
+          )}
+
+          {/* Multiple Recipients Toggle */}
+        <Paper withBorder p="md" radius="md" style={{ background: '#ffffff', border: '1px solid #000a14' }}>
+          <Group position="apart" align="center">
+            <div>
+              <Text weight={500} size="sm" color="#000a14">
+                Email Mode
+              </Text>
+              <Text size="xs" color="#666">
+                {isMultipleRecipients ? 'Send to multiple recipients (comma-separated emails)' : 'Send to single recipient'}
+              </Text>
+            </div>
+            <Switch
+              checked={isMultipleRecipients}
+              onChange={(event) => setIsMultipleRecipients(event.currentTarget.checked)}
+              color="blue"
+              size="md"
+            />
+          </Group>
+        </Paper>
+
+        {!isMultipleRecipients && (
+          <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
+            styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+            classNames={{ input: 'custom-input' }}
+            mb={8}
+          />
         )}
-        <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
-          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-          classNames={{ input: 'custom-input' }}
-          mb={8}
-        />
-        <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="sm"
+        <TextInput 
+          label={isMultipleRecipients ? "Recipient Emails (comma-separated)" : "Recipient Email"} 
+          value={recipientEmail} 
+          onChange={e => setRecipientEmail(e.target.value)} 
+          radius="md" 
+          size="sm"
+          placeholder={isMultipleRecipients ? "email1@example.com, email2@example.com" : "recipient@example.com"}
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
           mb={8}
@@ -218,12 +319,28 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
           )}
         </CopyButton>
         <Group position="right">
-          <Button onClick={handleSendGmail} loading={generating} radius="md" color="teal" style={{ fontWeight: 600 }}>Send with Gmail</Button>
+          <Button 
+            onClick={handleSendGmail} 
+            loading={generating} 
+            radius="md" 
+            style={{ 
+              backgroundColor: hoveredSend ? '#1971c2' : '#228be6',
+              color: 'white',
+              fontWeight: 600,
+              border: 'none',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={() => setHoveredSend(true)}
+            onMouseLeave={() => setHoveredSend(false)}
+          >
+            {isMultipleRecipients ? 'Send to Multiple Recipients' : 'Send with Gmail'}
+          </Button>
         </Group>
         {sendStatus && <Notification color={sendStatus.includes('✅') ? 'teal' : 'red'}>{sendStatus}</Notification>}
       </Stack>
       <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
     </form>
+    </>
   );
 };
 

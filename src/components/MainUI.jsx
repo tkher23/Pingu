@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, Paper, Box, Button, TextInput, Group, Badge, Loader, Notification, Stack, Text } from '@mantine/core';
 import SimpleEmailForm from './SimpleEmailForm';
-import AgenticMode from './AgenticMode';
+// import AgenticMode from './AgenticMode'; // Hidden - BatchMode handles single profiles too
 import BatchMode from './BatchMode';
 import Settings from './Settings';
 import SubscriptionsOnboardingPanel from './SubscriptionsOnboardingPanel';
@@ -107,7 +107,9 @@ export default function MainUI() {
             Welcome to Pingu, your email assistant!
           </Text>
           <Text size="sm" color="dimmed" mb={8}>
-            Pingu understands you and your email recipient's background to craft the best cold email! Use your available credits to generate & send emails. Upgrade your plan to unlock more features and credits. You can manage your subscription and see your current plan in the Subscriptions tab. If you have any questions, check the Settings tab.
+            Pingu understands you and your email recipient's background to craft the best cold email! 
+            <strong> Credits: 2 credits per profile in Batch Mode, 1 credit per recipient in Simple Email.</strong> 
+            Upgrade your plan to unlock more features and credits. You can manage your subscription and see your current plan in the Subscriptions tab. If you have any questions, check the Settings tab.
           </Text>
           <Button size="xs" color="blue" variant="light" onClick={() => setShowWelcome(false)} style={{ float: 'right', marginTop: 4 }}>
             Close
@@ -140,7 +142,7 @@ export default function MainUI() {
             </Button>
           </Group>
           <Tabs
-            defaultValue="agentic"
+            defaultValue="batch"
             variant="pills"
             radius="md"
             color="blue"
@@ -168,20 +170,12 @@ export default function MainUI() {
                 }}
               >
                 <Tabs.Tab
-                  value="agentic"
-                  style={{ ...blueButtonStyle, ...(hovered === 'agentic' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
-                  onMouseEnter={() => setHovered('agentic')}
-                  onMouseLeave={() => setHovered(false)}
-                >
-                  Agentic Mode
-                </Tabs.Tab>
-                <Tabs.Tab
                   value="batch"
                   style={{ ...blueButtonStyle, ...(hovered === 'batch' ? blueButtonHover : {}), fontWeight: 500, fontSize: 13, minHeight: 0, height: 28, padding: '0 14px', borderRadius: 8, flex: 1, maxWidth: 140, whiteSpace: 'nowrap' }}
                   onMouseEnter={() => setHovered('batch')}
                   onMouseLeave={() => setHovered(false)}
                 >
-                  Batch Mode
+                  Advanced Mode
                 </Tabs.Tab>
                 <Tabs.Tab
                   value="simple"
@@ -189,7 +183,7 @@ export default function MainUI() {
                   onMouseEnter={() => setHovered('simple')}
                   onMouseLeave={() => setHovered(false)}
                 >
-                  Simple Email
+                  Simple Mode
                 </Tabs.Tab>
                 <Tabs.Tab
                   value="subscriptions"
@@ -209,14 +203,6 @@ export default function MainUI() {
                 </Tabs.Tab>
               </Tabs.List>
             </div>
-            <Tabs.Panel value="agentic" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
-              <AgenticMode 
-                credits={credits}
-                creditsLoading={creditsLoading}
-                creditsError={creditsError}
-                fetchCredits={fetchCredits}
-              />
-            </Tabs.Panel>
             <Tabs.Panel value="batch" pt={0} style={{ background: 'transparent', borderRadius: 0, padding: 0 }}>
               <BatchMode 
                 credits={credits}
