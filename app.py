@@ -837,9 +837,22 @@ def generate_simple_email_api():
         data = request.get_json()
         print("📩 Simple Email Request:", json.dumps(data, indent=2))
 
-        # Simple credit check - just 1 credit for generation (original logic)
-        if user_credits < 1:
-            return jsonify({"error": f"Insufficient credits. Need 1 credit for email generation, have {user_credits}"}), 402
+        # GET THE RECIPIENT EMAILS AND COUNT THEM
+        recipient_emails = data.get("recipient_emails", "").strip()
+        if not recipient_emails:
+            return jsonify({"error": "Missing recipient emails"}), 400
+
+        # Parse and count recipients
+        email_list = [email.strip() for email in recipient_emails.split(',') if email.strip()]
+        num_recipients = len(email_list)
+        
+        # Validate max 50 recipients
+        if num_recipients > 50:
+            return jsonify({"error": f"Too many recipients. Maximum 50 allowed, you provided {num_recipients} recipients."}), 400
+
+        # Check credits based on number of recipients
+        if user_credits < num_recipients:
+            return jsonify({"error": f"Insufficient credits. Need {num_recipients} credits for {num_recipients} recipients, have {user_credits}"}), 402
 
         profile = {
             "internship_interest": data.get("internship_interest", ""),
@@ -850,7 +863,10 @@ def generate_simple_email_api():
 
         processed = process_profiles_batch_async_wrapper([profile], generate_email_flag=True, generate_subject_flag=False, simple_email=True)
 
-        decrement_user_credits(user_id, amount=1)  # Original simple logic - 1 credit for generation
+        # CHARGE CREDITS BASED ON NUMBER OF RECIPIENTS
+        decrement_user_credits(user_id, amount=num_recipients)
+        
+        log_to_file(f"✅ Simple email generated for {num_recipients} recipients, charged {num_recipients} credits")
         return jsonify(processed[0]), 200
 
     except Exception as e:
