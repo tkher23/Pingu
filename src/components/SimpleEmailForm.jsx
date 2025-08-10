@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Group, TextInput, Textarea, Stack, CopyButton, Notification, Switch, Paper, Text, Modal } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useGmailSender from '../hooks/useGmailSender';
+import { API_BASE_URL } from '../utils/constants';
 
 const blueButtonStyle = {
   background: '#e6f3ff',
@@ -53,19 +54,26 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
     getProfile();
   }, [getProfile]);
 
-  // Restore from localStorage on mount
+  // Restore from localStorage on mount (except interest - wait for profile)
   useEffect(() => {
     setRecipientName(localStorage.getItem('se_recipientName') || '');
     setRecipientEmail(localStorage.getItem('se_recipientEmail') || '');
-    setInterest(localStorage.getItem('se_interest') || '');
     setSubject(localStorage.getItem('se_subject') || '');
     setBody(localStorage.getItem('se_body') || '');
+    // Don't load interest from localStorage initially - wait for profile to set default
   }, []);
 
-  // If Internship Interest is empty after profile loads, set it to default_interest
+  // Populate default interest from settings when profile loads
   useEffect(() => {
-    if (profile && profile.default_interest && !interest) {
+    if (profile && profile.default_interest) {
+      // Always use the default interest from settings when profile loads
       setInterest(profile.default_interest);
+    } else if (!profile || !profile.default_interest) {
+      // If no default interest in profile, load from localStorage as fallback
+      const savedInterest = localStorage.getItem('se_interest');
+      if (savedInterest) {
+        setInterest(savedInterest);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
@@ -133,62 +141,63 @@ const SimpleEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits }
   };
 
   const handleSendGmail = async () => {
-    if (!recipientEmail || !subject || !body) {
-      setSendStatus('Missing recipient email, subject, or body');
-      return;
-    }
-
-    if (!isMultipleRecipients && !recipientName) {
-      setSendStatus('Missing recipient name');
-      return;
-    }
-
     try {
+      const { supabaseToken } = await chrome.storage.local.get('supabaseToken');
+      
       if (isMultipleRecipients) {
-        // Handle multiple emails
-        const emails = recipientEmail.split(',').map(email => email.trim()).filter(email => email);
-        if (emails.length === 0) {
-          setSendStatus('❌ Please enter valid email addresses');
-          return;
-        }
-
-        setSendStatus(`📧 Sending to ${emails.length} recipients...`);
+        // Send raw data to backend - let backend handle all validation and logic
+        setSendStatus('📧 Processing multiple recipients...');
         
-        let successCount = 0;
-        let failCount = 0;
+        const response = await fetch(`${API_BASE_URL}/api/send-email-smart`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseToken}`
+          },
+          body: JSON.stringify({
+            recipient_emails: recipientEmail,
+            recipient_name: recipientName,
+            subject: subject,
+            body: body,
+            sender_name: profile?.name || '',
+            sender_email: profile?.email || ''
+          })
+        });
 
-        for (const email of emails) {
-          try {
-            await sendGmail(email, subject, body);
-            successCount++;
-          } catch (err) {
-            console.error(`Failed to send to ${email}:`, err);
-            failCount++;
-          }
-        }
-
-        if (failCount === 0) {
-          setSendStatus(`✅ All ${successCount} emails sent successfully!`);
-        } else {
-          setSendStatus(`⚠️ ${successCount} sent, ${failCount} failed`);
+        const result = await response.json();
+        setSendStatus(result.success ? `✅ ${result.message}` : `❌ ${result.error}`);
+        
+        // Clear fields on success and refresh credits
+        if (result.success) {
+          if (fetchCredits) fetchCredits();
+          setRecipientName('');
+          setRecipientEmail('');
+          setInterest('');
+          setSubject('');
+          setBody('');
+          localStorage.removeItem('se_recipientName');
+          localStorage.removeItem('se_recipientEmail');
+          localStorage.removeItem('se_interest');
+          localStorage.removeItem('se_subject');
+          localStorage.removeItem('se_body');
         }
       } else {
-        // Handle single email (original functionality)
+        // Handle single email with direct Gmail API
         await sendGmail(recipientEmail, subject, body);
         setSendStatus('✅ Email sent!');
+        
+        // Clear fields on success
+        setRecipientName('');
+        setRecipientEmail('');
+        setInterest('');
+        setSubject('');
+        setBody('');
+        localStorage.removeItem('se_recipientName');
+        localStorage.removeItem('se_recipientEmail');
+        localStorage.removeItem('se_interest');
+        localStorage.removeItem('se_subject');
+        localStorage.removeItem('se_body');
       }
-      
-      // Clear all fields and localStorage after send
-      setRecipientName('');
-      setRecipientEmail('');
-      setInterest('');
-      setSubject('');
-      setBody('');
-      localStorage.removeItem('se_recipientName');
-      localStorage.removeItem('se_recipientEmail');
-      localStorage.removeItem('se_interest');
-      localStorage.removeItem('se_subject');
-      localStorage.removeItem('se_body');
     } catch (err) {
       console.error('Send error:', err);
       setSendStatus('❌ Send failed: ' + err.message);

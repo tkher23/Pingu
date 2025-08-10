@@ -468,13 +468,17 @@ export default function BatchMode({ credits, creditsLoading, creditsError, fetch
           <Group spacing="xs">
             <Text size="lg" weight={700} color="#5fafde">📦</Text>
             <Text weight={600} size="lg">Advanced Mode</Text>
+            <Badge color="purple" size="sm" variant="light">Profile & Email Scraping</Badge>
             <Badge color="purple" size="sm" variant="light">Bulk Processing</Badge>
           </Group>
         </Group>
 
         {/* Description */}
         <Text size="sm" color="dimmed">
-          Process multiple LinkedIn profiles at once. Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture them quickly, or manually enter URLs in the fields below.
+          Navigate to each LinkedIn profile and click "Add Current Tab URL" to capture the profile you're viewing quickly. Pingu takes up to 10 profiles at a time!
+        </Text>
+        <Text size="sm" color="dimmed" style={{ fontStyle: 'italic', marginTop: '4px' }}>
+          💡 Pro Tip: Batch your profiles for faster processing with no impact on performance!
         </Text>
 
         {/* URL Input Section */}
