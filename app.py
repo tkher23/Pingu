@@ -329,12 +329,84 @@ def should_use_apollo_enrichment(user_plan_type):
     # return user_plan_type in ["basic", "advanced"]
 
 def is_valid_email(email):
-    """Backend email validation"""
+    """Strict email validation - must be complete email address"""
     import re
     if not email or not isinstance(email, str):
         return False
+    
+    # Strict email pattern - requires full domain with TLD
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
+
+def validate_email_fields(data):
+    """Validate that fields contain appropriate data types and detect field swapping"""
+    import re
+    
+    recipient_emails = data.get('recipient_emails', '').strip()
+    subject = data.get('subject', '').strip()
+    body = data.get('body', '').strip()
+    
+    # Basic field presence check
+    if not recipient_emails or not subject or not body:
+        return False, "Missing required fields: recipient emails, subject, or body"
+    
+    # Length validation
+    if len(subject) > 200:
+        return False, "Subject too long (max 200 characters)"
+    
+    if len(body) > 5000:
+        return False, "Email body too long (max 5000 characters)"
+    
+    # Validate recipient_emails contains only email-like strings
+    emails = [e.strip() for e in recipient_emails.split(',') if e.strip()]
+    if not emails:
+        return False, "No valid emails provided"
+    
+    for email in emails:
+        if not is_valid_email(email):
+            return False, f"Invalid email format: {email}"
+        # Additional check: emails shouldn't look like subjects/content
+        if len(email) > 100:
+            return False, f"Email address too long: {email}"
+        
+        # Check for suspicious content in email field
+        suspicious_words = ['meeting', 'request', 'hello', 'hi', 'dear', 'position', 'job', 'opportunity']
+        if any(word in email.lower() for word in suspicious_words):
+            return False, f"Email field contains non-email content: {email}"
+    
+    # Check if subject contains multiple emails (field swapping attack)
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    emails_in_subject = re.findall(email_pattern, subject)
+    if len(emails_in_subject) > 1:
+        return False, "Subject field contains multiple email addresses"
+    
+    # Check if recipient_emails looks like subject content
+    if not '@' in recipient_emails:
+        return False, "Recipient emails field doesn't contain valid emails"
+    
+    return True, "Valid"
+
+def validate_email_content(subject, body):
+    """Basic content filtering to prevent spam/malicious content"""
+    content = (subject + " " + body).lower()
+    
+    # Spam indicators
+    spam_indicators = [
+        'click here now', 'urgent action required', 'act now', 'free money',
+        'make money fast', 'guaranteed income', 'work from home scam',
+        'virus detected', 'your account will be closed', 'suspended account',
+        'verify your account immediately', 'click this link now'
+    ]
+    
+    for indicator in spam_indicators:
+        if indicator in content:
+            return False, f"Content flagged as potential spam: contains '{indicator}'"
+    
+    # Check for excessive capitalization (SHOUTING)
+    if len([c for c in subject if c.isupper()]) > len(subject) * 0.7 and len(subject) > 10:
+        return False, "Subject contains excessive capitalization"
+    
+    return True, "Content OK"
 
 def send_email_via_gmail(to_email, subject, body, sender_name, sender_email, user_id):
     """Send email via Gmail API"""
@@ -734,13 +806,51 @@ def process_single_profile():
         data_parse_start = time.time()
         data = request.get_json()
         print("🟡 Received data:", json.dumps(data, indent=2))
+        
+        # CONTENT VALIDATION for profile processing
+        linkedin_text = data.get("linkedin", "").strip()
+        bio_text = data.get("bio_page", "").strip()
+        values_text = data.get("values_page", "").strip()
+        internship_interest = data.get("internship_interest", "").strip()
+        recipient_name = data.get("recipient_name", "").strip()
+        
+        # Length validation for all text fields
+        text_fields = {
+            "LinkedIn content": linkedin_text,
+            "Bio page": bio_text,
+            "Values page": values_text,
+            "Internship interest": internship_interest
+        }
+        
+        for field_name, field_value in text_fields.items():
+            if field_value and len(field_value) > 10000:  # 10k char limit for large text fields
+                log_to_file(f"❌ {field_name} too long: {len(field_value)} chars")
+                return jsonify({"error": f"{field_name} too long (max 10,000 characters)"}), 400
+        
+        # Validate recipient name
+        if recipient_name:
+            if len(recipient_name) > 100:
+                log_to_file(f"❌ Recipient name too long: {len(recipient_name)} chars")
+                return jsonify({"error": "Recipient name too long (max 100 characters)"}), 400
+            
+            if '@' in recipient_name or any(char in recipient_name for char in ['<', '>', '[', ']', '{', '}']):
+                log_to_file(f"❌ Suspicious recipient name: {recipient_name}")
+                return jsonify({"error": "Invalid characters in recipient name"}), 400
+        
+        # Content filtering for internship interest
+        if internship_interest:
+            valid, error_msg = validate_email_content(internship_interest, "")
+            if not valid:
+                log_to_file(f"❌ Internship interest content rejected: {error_msg}")
+                return jsonify({"error": f"Content rejected: {error_msg}"}), 400
+        
         profile = {
-            "linkedin": {"raw_text": data.get("linkedin", "")},
-            "bio_page": {"raw_text": data.get("bio_page", "")},
-            "values_page": {"raw_text": data.get("values_page", "")},
-            "internship_interest": data.get("internship_interest", ""),
+            "linkedin": {"raw_text": linkedin_text},
+            "bio_page": {"raw_text": bio_text},
+            "values_page": {"raw_text": values_text},
+            "internship_interest": internship_interest,
             "user_info": data.get("user_info", {}),
-            "recipient_name": data.get("recipient_name", ""),
+            "recipient_name": recipient_name,
             "company_of_interest": data.get("user_info", {}).get("company_interest", ""),
             "role_type": data.get("user_info", {}).get("role_type", "internship")
         }
@@ -807,7 +917,33 @@ def generate_subject_route():
 
         data = request.get_json()
         user_info = data.get("user_info", {})
-        company = data.get("company_of_interest", "")
+        company = data.get("company_of_interest", "").strip()
+
+        # CONTENT VALIDATION for subject generation
+        if company:
+            # Length validation
+            if len(company) > 200:
+                log_to_file(f"❌ Company name too long: {len(company)} chars")
+                return jsonify({"error": "Company name too long (max 200 characters)"}), 400
+            
+            # Content filtering - check for suspicious content
+            if any(char in company for char in ['<', '>', '[', ']', '{', '}', '@']):
+                log_to_file(f"❌ Suspicious company name: {company}")
+                return jsonify({"error": "Invalid characters in company name"}), 400
+            
+            # Basic spam content check
+            spam_words = ['click here', 'urgent', 'free money', 'virus', 'suspended']
+            if any(word in company.lower() for word in spam_words):
+                log_to_file(f"❌ Suspicious content in company name: {company}")
+                return jsonify({"error": "Invalid content in company name"}), 400
+
+        # Validate user_info fields if present
+        if user_info:
+            for key, value in user_info.items():
+                if isinstance(value, str) and value.strip():
+                    if len(value) > 300:
+                        log_to_file(f"❌ User info field '{key}' too long: {len(value)} chars")
+                        return jsonify({"error": f"Field '{key}' too long (max 300 characters)"}), 400
 
         profile = {
             "user_info": user_info,
@@ -845,6 +981,34 @@ def generate_simple_email_api():
         data = request.get_json()
         print("📩 Simple Email Request:", json.dumps(data, indent=2))
 
+        # CONTENT VALIDATION for email generation
+        internship_interest = data.get("internship_interest", "").strip()
+        recipient_name = data.get("recipient_name", "").strip()
+        
+        # Basic content filtering for internship interest and recipient name
+        if internship_interest:
+            # Length validation
+            if len(internship_interest) > 500:
+                log_to_file(f"❌ Internship interest too long: {len(internship_interest)} chars")
+                return jsonify({"error": "Internship interest too long (max 500 characters)"}), 400
+            
+            # Content filtering
+            valid, error_msg = validate_email_content(internship_interest, "")
+            if not valid:
+                log_to_file(f"❌ Internship interest content rejected: {error_msg}")
+                return jsonify({"error": f"Content rejected: {error_msg}"}), 400
+        
+        if recipient_name:
+            # Length validation for recipient name
+            if len(recipient_name) > 100:
+                log_to_file(f"❌ Recipient name too long: {len(recipient_name)} chars")
+                return jsonify({"error": "Recipient name too long (max 100 characters)"}), 400
+            
+            # Check for suspicious content in recipient name
+            if '@' in recipient_name or any(char in recipient_name for char in ['<', '>', '[', ']', '{', '}']):
+                log_to_file(f"❌ Suspicious recipient name: {recipient_name}")
+                return jsonify({"error": "Invalid characters in recipient name"}), 400
+
         # Simple credit check - just 1 credit for generation (back to original logic)
         if user_credits < 1:
             return jsonify({"error": f"Insufficient credits. Need 1 credit for email generation, have {user_credits}"}), 402
@@ -876,18 +1040,28 @@ def send_email_smart():
             return jsonify({"success": False, "error": "Please log in first"}), 401
         
         data = request.json
-        recipient_emails = data.get('recipient_emails', '').strip()
-        recipient_name = data.get('recipient_name', '').strip()
-        subject = data.get('subject', '').strip()
-        body = data.get('body', '').strip()
-        sender_name = data.get('sender_name', '')
-        sender_email = data.get('sender_email', '')
         
         log_to_file(f"[TIMING] Smart email endpoint called: user_id={user_id}")
         
-        # Backend handles ALL validation
-        if not recipient_emails or not subject or not body:
-            return jsonify({"success": False, "error": "Missing required fields: recipient emails, subject, or body"}), 400
+        # ENHANCED SECURITY VALIDATION
+        # 1. Validate field content and detect field swapping
+        valid, error_msg = validate_email_fields(data)
+        if not valid:
+            log_to_file(f"❌ Field validation failed: {error_msg}")
+            return jsonify({"success": False, "error": f"Invalid data: {error_msg}"}), 400
+        
+        # 2. Validate email content for spam/malicious content
+        subject = data.get('subject', '').strip()
+        body = data.get('body', '').strip()
+        valid, error_msg = validate_email_content(subject, body)
+        if not valid:
+            log_to_file(f"❌ Content validation failed: {error_msg}")
+            return jsonify({"success": False, "error": f"Content rejected: {error_msg}"}), 400
+        
+        # Extract validated data
+        recipient_emails = data.get('recipient_emails', '').strip()
+        sender_name = data.get('sender_name', '')
+        sender_email = data.get('sender_email', '')
         
         # Always handle as multiple recipients (no mode parameter)
         return handle_multiple_emails(user_id, recipient_emails, subject, body, sender_name, sender_email)
