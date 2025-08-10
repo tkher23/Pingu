@@ -9,3 +9,4 @@ pandas
 flask-cors
 requests
 stripe
+supabase
