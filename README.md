@@ -18,6 +18,8 @@ Whether you’re reaching out for internships, networking or full-time, Pingu sa
 
 Try it free with limited credits. Upgrade plans available.
 
+Note: v1.0 has been approved.
+
 ---
 
 ## Screenshots
