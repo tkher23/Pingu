@@ -1,25 +1,24 @@
-# Pingu (v2.0) - Currently Pending in Google Chrome Webstore
+# Pingu (v2.0) - Currently in Google Chrome Webstore
 
 Pingu is your AI-powered personal assistant for writing thoughtful, effective cold emails—fast. Built for students, job-seekers, founders, and professionals, Pingu personalizes your outreach based on profile details and intelligent web context.
 
-🎯 Features:
+🎯 With One Click, Pingu...
 
-🌐 Scrapes recipient's LinkedIn Profile and Finds their email with one click
+🌐 Scrapes recipient's LinkedIn Profile and Finds their email with one click, 
 
-✨ Instant personalized email generation, individually or in batches up to 50
+🧠 Uses Recipient's Profile For AI-Personalized Message,
 
-🧠 AI-personalized messaging using recipient's profile
+✨ Instantly generates a personalized email, individually or in batches up to 50,
 
-📧 Gmail integration for direct email sending straight from Pingu
+📧 Integrates to your Gmail, Sending the Email on Your Behalf,
 
-🌐 Works seamlessly from your browser with a clean, modern UI
+🌐 All While Working seamlessly from your browser with a clean, modern UI.
 
 Whether you’re reaching out for internships, networking or full-time, Pingu saves time while championing personalization.
 
 Try it free with limited credits. Upgrade plans available.
 
-Note: v1.0 has been approved.
-
+Note: Prices updated. Google OAuth verification in process.
 ---
 
 ## Screenshots
