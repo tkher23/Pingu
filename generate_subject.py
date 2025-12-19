@@ -1,5 +1,5 @@
-from langchain.schema import HumanMessage
-from langchain.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOpenAI
 import os
 from dotenv import load_dotenv
