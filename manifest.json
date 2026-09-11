@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Pingu",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Generate personalized outreach emails!",
   "permissions": [
     "storage",
-    "tabs",
-    "sidePanel"
+    "sidePanel",
+    "tabs"
   ],
   "host_permissions": [
     "https://pingu-login.vercel.app/*"

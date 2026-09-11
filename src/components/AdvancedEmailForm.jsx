@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextInput, Group, Textarea, CopyButton, Notification, Stack } from '@mantine/core';
+import { Button, TextInput, Group, Textarea, CopyButton, Notification, Stack, Modal, Text } from '@mantine/core';
 import useProfile from '../hooks/useProfile';
 import useGmailSender from '../hooks/useGmailSender';
 import useLogin from '../hooks/useLogin';
@@ -40,6 +40,8 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
   const [hoveredCopySubject, setHoveredCopySubject] = useState(false);
   const [hoveredCopyBody, setHoveredCopyBody] = useState(false);
 
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   // Restore from localStorage on mount
   useEffect(() => {
     setRecipientName(localStorage.getItem('ae_recipientName') || '');
@@ -51,6 +53,17 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
     setSubject(localStorage.getItem('ae_subject') || '');
     setBody(localStorage.getItem('ae_body') || '');
   }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem('hasSeenAdvancedOnboarding')) {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hasSeenAdvancedOnboarding', 'true');
+  };
 
   // If Internship Interest is empty after profile loads, set it to default_interest
   useEffect(() => {
@@ -183,97 +196,116 @@ const AdvancedEmailForm = ({ credits, creditsLoading, creditsError, fetchCredits
   };
 
   return (
-    <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
-      {(profileError || creditsError) && (
-        <Notification color="red" title="Error" mb="md">
-          {profileError && <div>Profile: {profileError.toString()}</div>}
-          {creditsError && <div>Credits: {creditsError.toString()}</div>}
-        </Notification>
-      )}
-      <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <TextInput label="LinkedIn Information" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <TextInput label="Bio Page" value={bio} onChange={e => setBio(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <TextInput label="Company Description Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <TextInput label="Career Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
-        styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
-        classNames={{ input: 'custom-input' }}
-        mb={8}
-      />
-      <Stack spacing="xl">
-        <Group spacing="md" grow align="flex-end">
-          <Button
-            onClick={handleGenerateAll}
-            loading={generating}
-            radius="md"
-            style={{ ...blueButtonStyle, ...(hoveredGenerateEmail ? blueButtonHover : {}) }}
-            onMouseEnter={() => setHoveredGenerateEmail(true)}
-            onMouseLeave={() => setHoveredGenerateEmail(false)}
-          >
-            Generate
-          </Button>
-        </Group>
-        <TextInput label="Subject" value={subject} onChange={e => setSubject(e.target.value)} radius="md" size="sm"
+    <>
+      <Modal
+        opened={showOnboarding}
+        onClose={handleCloseOnboarding}
+        title="Advanced Email Tab"
+        centered
+        overlayProps={{ backgroundOpacity: 0.55, blur: 2 }}
+      >
+        <Text size="md" mb="md">
+          Here you can provide detailed information like LinkedIn, company values, and a bio page to generate even more personalized emails. The more info you provide, the better Pingu can tailor your message!
+        </Text>
+        <Button onClick={handleCloseOnboarding} fullWidth color="blue" radius="md">Got it!</Button>
+      </Modal>
+      <form style={{ background: '#e6f3ff', borderRadius: 12, padding: 0, color: '#000a14', fontFamily: 'inherit' }}>
+        {(profileError || creditsError) && (
+          <Notification color="red" title="Error" mb="md">
+            {profileError && <div>Profile: {profileError.toString()}</div>}
+            {creditsError && <div>Credits: {creditsError.toString()}</div>}
+          </Notification>
+        )}
+        <TextInput label="Recipient Name" value={recipientName} onChange={e => setRecipientName(e.target.value)} radius="md" size="sm"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
+          mb={8}
         />
-        <CopyButton value={subject} timeout={1500}>
-          {({ copied, copy }) => (
-            <Button
-              style={{ ...blueButtonStyle, ...(hoveredCopySubject ? blueButtonHover : {}) }}
-              onClick={copy}
-              radius="md"
-              onMouseEnter={() => setHoveredCopySubject(true)}
-              onMouseLeave={() => setHoveredCopySubject(false)}
-            >
-              {copied ? 'Copied' : 'Copy'}
-            </Button>
-          )}
-        </CopyButton>
-        <Textarea label="Email Body" value={body} onChange={e => setBody(e.target.value)} minRows={4} radius="md" size="sm"
+        <TextInput label="Recipient Email" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} radius="md" size="sm"
           styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
           classNames={{ input: 'custom-input' }}
+          mb={8}
         />
-        <CopyButton value={body} timeout={1500}>
-          {({ copied, copy }) => (
+        <Textarea label="LinkedIn Information" value={linkedin} onChange={e => setLinkedin(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
+        />
+        <Textarea label="Bio Page" value={bio} onChange={e => setBio(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
+        />
+        <Textarea label="Company Description Page" value={values} onChange={e => setValues(e.target.value)} radius="md" size="sm"
+          autosize minRows={3} maxRows={10}
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
+        />
+        <TextInput label="Career Interest" value={interest} onChange={e => setInterest(e.target.value)} radius="md" size="sm"
+          styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+          classNames={{ input: 'custom-input' }}
+          mb={8}
+        />
+        <Stack spacing="xl">
+          <Group spacing="md" grow align="flex-end">
             <Button
-              style={{ ...blueButtonStyle, ...(hoveredCopyBody ? blueButtonHover : {}) }}
-              onClick={copy}
+              onClick={handleGenerateAll}
+              loading={generating}
               radius="md"
-              onMouseEnter={() => setHoveredCopyBody(true)}
-              onMouseLeave={() => setHoveredCopyBody(false)}
+              style={{ ...blueButtonStyle, ...(hoveredGenerateEmail ? blueButtonHover : {}) }}
+              onMouseEnter={() => setHoveredGenerateEmail(true)}
+              onMouseLeave={() => setHoveredGenerateEmail(false)}
             >
-              {copied ? 'Copied' : 'Copy'}
+              Generate
             </Button>
-          )}
-        </CopyButton>
-        <Group position="right">
-          <Button onClick={handleSendGmail} loading={generating} radius="md" color="teal" style={{ fontWeight: 600 }}>Send with Gmail</Button>
-        </Group>
-        {sendStatus && <Notification color={sendStatus.includes('✅') ? 'teal' : 'red'}>{sendStatus}</Notification>}
-      </Stack>
-      <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
-    </form>
+          </Group>
+          <TextInput label="Subject" value={subject} onChange={e => setSubject(e.target.value)} radius="md" size="sm"
+            styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none' }, label: { color: '#000a14', fontWeight: 500 } }}
+            classNames={{ input: 'custom-input' }}
+          />
+          <CopyButton value={subject} timeout={1500}>
+            {({ copied, copy }) => (
+              <Button
+                style={{ ...blueButtonStyle, ...(hoveredCopySubject ? blueButtonHover : {}) }}
+                onClick={copy}
+                radius="md"
+                onMouseEnter={() => setHoveredCopySubject(true)}
+                onMouseLeave={() => setHoveredCopySubject(false)}
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </Button>
+            )}
+          </CopyButton>
+          <Textarea label="Email Body" value={body} onChange={e => setBody(e.target.value)} minRows={4} radius="md" size="sm"
+            autosize
+            maxRows={20}
+            styles={{ input: { background: '#e6f3ff', color: '#000a14', border: '1px solid #000a14', boxShadow: 'none', overflowY: 'auto' }, label: { color: '#000a14', fontWeight: 500 } }}
+            classNames={{ input: 'custom-input' }}
+          />
+          <CopyButton value={body} timeout={1500}>
+            {({ copied, copy }) => (
+              <Button
+                style={{ ...blueButtonStyle, ...(hoveredCopyBody ? blueButtonHover : {}) }}
+                onClick={copy}
+                radius="md"
+                onMouseEnter={() => setHoveredCopyBody(true)}
+                onMouseLeave={() => setHoveredCopyBody(false)}
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </Button>
+            )}
+          </CopyButton>
+          <Group position="right">
+            <Button onClick={handleSendGmail} loading={generating} radius="md" color="teal" style={{ fontWeight: 600 }}>Send with Gmail</Button>
+          </Group>
+          {sendStatus && <Notification color={sendStatus.includes('✅') ? 'teal' : 'red'}>{sendStatus}</Notification>}
+        </Stack>
+        <style>{`.custom-input:focus { border: 1.5px solid #5fafde !important; box-shadow: 0 0 0 1.5px #5fafde !important; }`}</style>
+      </form>
+    </>
   );
 };
 
