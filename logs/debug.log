@@ -1,5 +1,0 @@
-[2025-08-08 17:34:11.340] BrightData job completed, got 1 profiles
-[2025-08-08 17:34:11.384] DEBUG: Raw experience data: None
-[2025-08-08 17:34:11.384] DEBUG: Experience type: <class 'NoneType'>
-[2025-08-08 17:34:11.384] DEBUG: No valid experience data found
-[2025-08-08 17:34:11.387] DEBUG: Final parsed experiences: []
