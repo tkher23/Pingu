@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Pingu",
+  "version": "2.0",
+  "description": "Generate personalized outreach emails!",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://pingu-login.vercel.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Pingu",
+    "default_popup": "dist/popup.html",
+    "default_width": 360,
+    "default_height": 700
+  },
+  "side_panel": {
+    "default_path": "dist/popup.html"
+  },
+  "externally_connectable": {
+    "matches": ["https://pingu-login.vercel.app/login.html"]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "128": "public/icon.png"
+  }
+}

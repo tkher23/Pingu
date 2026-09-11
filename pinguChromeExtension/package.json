@@ -1,0 +1,25 @@
+{
+  "name": "chrome-extension",
+  "version": "1.0.0",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@mantine/core": "^8.1.2",
+    "@mantine/hooks": "^8.1.2",
+    "@mantine/modals": "^8.1.2",
+    "@mantine/notifications": "^8.1.2",
+    "@mantine/styles": "^6.0.22",
+    "@supabase/supabase-js": "^2.49.9",
+    "@vitejs/plugin-react": "^4.6.0",
+    "esbuild": "^0.25.5"
+  }
+}
