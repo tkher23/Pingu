@@ -1,0 +1,13 @@
+flask
+python-dotenv
+openai
+requests
+beautifulsoup4
+langchain
+langchain-community
+pandas
+flask-cors
+requests
+stripe
+supabase
+langchain-core
